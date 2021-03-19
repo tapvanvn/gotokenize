@@ -4,21 +4,21 @@ const (
 	TokenUnknown = iota
 )
 
-type BaseToken struct {
+type Token struct {
 	Type     int
 	Content  string
 	Children TokenStream
 }
 
-func (token *BaseToken) GetType() int {
+func (token *Token) GetType() int {
 	return token.Type
 }
 
-func (token *BaseToken) GetContent() string {
+func (token *Token) GetContent() string {
 	return token.Content
 }
 
-func (token *BaseToken) GetChildren() *TokenStream {
+func (token *Token) GetChildren() *TokenStream {
 	return &token.Children
 }
 

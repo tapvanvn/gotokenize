@@ -7,7 +7,7 @@ import (
 
 //TokenStream token stream
 type TokenStream struct {
-	Tokens []BaseToken
+	Tokens []Token
 	//Offset int
 	//Level  int
 }
@@ -32,14 +32,14 @@ func (stream *TokenStream) Tokenize(content string) {
 
 	for _, rune := range runes {
 
-		token := BaseToken{Content: string(rune)}
+		token := Token{Content: string(rune)}
 
 		stream.AddToken(token)
 	}
 }
 
 //AddToken add token to stream
-func (stream *TokenStream) AddToken(token BaseToken) {
+func (stream *TokenStream) AddToken(token Token) {
 
 	stream.Tokens = append(stream.Tokens, token)
 }
@@ -49,14 +49,14 @@ func (stream *TokenStream) AddTokenFromString(tokenType int, str string) {
 
 	for _, r := range []rune(str) {
 
-		stream.AddToken(BaseToken{Type: tokenType, Content: string(r)})
+		stream.AddToken(Token{Type: tokenType, Content: string(r)})
 	}
 }
 
 //AddTokenByContent add token
 func (stream *TokenStream) AddTokenByContent(content []rune, tokenType int) {
 
-	stream.Tokens = append(stream.Tokens, BaseToken{Content: string(content), Type: tokenType})
+	stream.Tokens = append(stream.Tokens, Token{Content: string(content), Type: tokenType})
 }
 
 //Debug print debug tree
@@ -171,7 +171,7 @@ func (iterator *TokenStreamIterator) DebugMark(level int, mark *Mark, ignores *[
 }
 
 //GetToken read token but not move pointer
-func (iterator *TokenStreamIterator) GetToken() *BaseToken {
+func (iterator *TokenStreamIterator) GetToken() *Token {
 
 	if iterator.Offset <= len(iterator.Stream.Tokens)-1 {
 
@@ -183,7 +183,7 @@ func (iterator *TokenStreamIterator) GetToken() *BaseToken {
 }
 
 //GetTokenIter get token at (offset + iterator) position
-func (iterator *TokenStreamIterator) GetTokenIter(iter int) *BaseToken {
+func (iterator *TokenStreamIterator) GetTokenIter(iter int) *Token {
 
 	if iterator.Offset+iter <= len(iterator.Stream.Tokens)-1 {
 
@@ -195,7 +195,7 @@ func (iterator *TokenStreamIterator) GetTokenIter(iter int) *BaseToken {
 }
 
 //GetTokenAt get token at offset
-func (stream *TokenStream) GetTokenAt(offset int) *BaseToken {
+func (stream *TokenStream) GetTokenAt(offset int) *Token {
 
 	if offset <= len(stream.Tokens)-1 {
 
@@ -205,7 +205,7 @@ func (stream *TokenStream) GetTokenAt(offset int) *BaseToken {
 }
 
 //GetTokenAt get token at offset
-func (iterator *TokenStreamIterator) GetTokenAt(offset int) *BaseToken {
+func (iterator *TokenStreamIterator) GetTokenAt(offset int) *Token {
 
 	if offset <= len(iterator.Stream.Tokens)-1 {
 
@@ -420,11 +420,11 @@ func isIgnoreInMark(iterator int, ignores *[]int) bool {
 }
 
 //GetMaskedToken get token from mask
-func (iterator *TokenStreamIterator) GetMaskedToken(mark *Mark, ignores *[]int) *BaseToken {
+func (iterator *TokenStreamIterator) GetMaskedToken(mark *Mark, ignores *[]int) *Token {
 
 	if mark.IsTokenStream {
 
-		token := BaseToken{Type: mark.Type}
+		token := Token{Type: mark.Type}
 
 		len := mark.End - mark.Begin
 
@@ -476,7 +476,7 @@ func (iterator *TokenStreamIterator) GetMaskedToken(mark *Mark, ignores *[]int) 
 }
 
 //ReadToken read token
-func (iterator *TokenStreamIterator) ReadToken() *BaseToken {
+func (iterator *TokenStreamIterator) ReadToken() *Token {
 
 	if iterator.Offset <= len(iterator.Stream.Tokens)-1 {
 
@@ -530,9 +530,9 @@ func (stream *TokenStream) ConcatStringContent() string {
 }
 
 //ToArray get array of tokens
-func (stream *TokenStream) ToArray() []BaseToken {
+func (stream *TokenStream) ToArray() []Token {
 
-	var rs []BaseToken
+	var rs []Token
 
 	var iterator = stream.Iterator()
 
@@ -552,7 +552,7 @@ func (stream *TokenStream) ToArray() []BaseToken {
 }
 
 //ReadFirstTokenType read first token of type
-func (stream *TokenStream) ReadFirstTokenType(tokenType int) *BaseToken {
+func (stream *TokenStream) ReadFirstTokenType(tokenType int) *Token {
 
 	var iterator = stream.Iterator()
 
@@ -575,7 +575,7 @@ func (stream *TokenStream) ReadFirstTokenType(tokenType int) *BaseToken {
 }
 
 //ReadNextTokenType read from current position to next match of token type
-func (iterator *TokenStreamIterator) ReadNextTokenType(tokenType int) *BaseToken {
+func (iterator *TokenStreamIterator) ReadNextTokenType(tokenType int) *Token {
 
 	for {
 		if iterator.EOS() {

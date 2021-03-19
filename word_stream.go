@@ -8,7 +8,7 @@ const (
 //WordTokenStream word
 type WordTokenStream struct {
 	Source string
-	Tokens []BaseToken
+	Tokens []Token
 	Offset int
 	runes  []rune
 }
@@ -96,7 +96,7 @@ func (stream *WordTokenStream) Tokenize(content string) {
 }
 
 //AddToken add token to stream
-func (stream *WordTokenStream) AddToken(token BaseToken) {
+func (stream *WordTokenStream) AddToken(token Token) {
 
 }
 
@@ -106,8 +106,8 @@ func (stream *WordTokenStream) AddTokenByConntent(content []rune, tokenType int)
 }
 
 //ReadToken read token
-func (stream *WordTokenStream) ReadToken() BaseToken {
-	return BaseToken{}
+func (stream *WordTokenStream) ReadToken() Token {
+	return Token{}
 }
 
 //ResetToBegin reset to begin
