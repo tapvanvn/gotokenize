@@ -1,7 +1,7 @@
 package js
 
 import (
-	"newcontinent-team.com/jscraft/tokenize"
+	tokenize "github.com/tapvanvn/gotokenize"
 )
 
 const (

@@ -1,4 +1,4 @@
-package tokenize
+package gotokenize
 
 const (
 	TokenWord = iota
