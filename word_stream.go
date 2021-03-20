@@ -5,19 +5,19 @@ const (
 	TokenSpace
 )
 
-//WordTokenStream word
-type WordTokenStream struct {
+//WordStream word
+type WordStream struct {
 	Source string
 	Tokens []Token
 	Offset int
 	runes  []rune
 }
 
-func (stream *WordTokenStream) GetCurrentCharacter() rune {
+func (stream *WordStream) GetCurrentCharacter() rune {
 	return stream.runes[stream.Offset]
 }
 
-func (stream *WordTokenStream) ReadCharacter() rune {
+func (stream *WordStream) ReadCharacter() rune {
 	if !stream.EOS() {
 		var tmpOffset = stream.Offset
 		stream.Offset++
@@ -26,7 +26,7 @@ func (stream *WordTokenStream) ReadCharacter() rune {
 	return rune(0)
 }
 
-func (stream *WordTokenStream) NextIndexOf(ch rune) int {
+func (stream *WordStream) NextIndexOf(ch rune) int {
 	tmpOffset := stream.Offset + 1
 	for {
 		if tmpOffset == stream.Length() {
@@ -41,7 +41,7 @@ func (stream *WordTokenStream) NextIndexOf(ch rune) int {
 	return -1
 }
 
-func (stream *WordTokenStream) GetToCharacter(toRune rune) string {
+func (stream *WordStream) GetToCharacter(toRune rune) string {
 	var rs string = ""
 	if !stream.EOS() {
 		var pos int = stream.NextIndexOf(toRune)
@@ -52,7 +52,7 @@ func (stream *WordTokenStream) GetToCharacter(toRune rune) string {
 	return rs
 }
 
-func (stream *WordTokenStream) ReadToCharacter(toRune rune) string {
+func (stream *WordStream) ReadToCharacter(toRune rune) string {
 	var rs string = ""
 	if !stream.EOS() {
 		var pos int = stream.NextIndexOf(toRune)
@@ -64,7 +64,7 @@ func (stream *WordTokenStream) ReadToCharacter(toRune rune) string {
 	return rs
 }
 
-func (stream *WordTokenStream) ReadWhileCharacterIn(filter string) string {
+func (stream *WordStream) ReadWhileCharacterIn(filter string) string {
 
 	var runeFilter []rune = []rune(filter)
 	var rsRune []rune
@@ -89,38 +89,38 @@ func (stream *WordTokenStream) ReadWhileCharacterIn(filter string) string {
 }
 
 //Tokenize tokenize a string
-func (stream *WordTokenStream) Tokenize(content string) {
+func (stream *WordStream) Tokenize(content string) {
 	stream.Source = content
 	stream.Offset = 0
 	stream.runes = []rune(content)
 }
 
 //AddToken add token to stream
-func (stream *WordTokenStream) AddToken(token Token) {
+func (stream *WordStream) AddToken(token Token) {
 
 }
 
 //AddTokenByConntent AddTokenByConntent
-func (stream *WordTokenStream) AddTokenByConntent(content []rune, tokenType int) {
+func (stream *WordStream) AddTokenByConntent(content []rune, tokenType int) {
 
 }
 
 //ReadToken read token
-func (stream *WordTokenStream) ReadToken() Token {
+func (stream *WordStream) ReadToken() Token {
 	return Token{}
 }
 
 //ResetToBegin reset to begin
-func (stream *WordTokenStream) ResetToBegin() {
+func (stream *WordStream) ResetToBegin() {
 	stream.Offset = 0
 }
 
 //EOS is end of stream
-func (stream *WordTokenStream) EOS() bool {
+func (stream *WordStream) EOS() bool {
 	return stream.Offset >= len(stream.runes)
 }
 
 //Length get len of stream
-func (stream *WordTokenStream) Length() int {
+func (stream *WordStream) Length() int {
 	return len(stream.runes)
 }
