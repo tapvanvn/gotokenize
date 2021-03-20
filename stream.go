@@ -102,7 +102,6 @@ func (stream *TokenStream) Debug(level int, fnName func(int) string) {
 					fmt.Println("")
 				}
 			}
-
 		}
 		token.Children.Debug(level+1, fnName)
 	}

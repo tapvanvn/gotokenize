@@ -1,6 +1,8 @@
 package gotokenize
 
-import "strings"
+import (
+	"strings"
+)
 
 type RawMeaning struct {
 	Meaning
@@ -8,8 +10,11 @@ type RawMeaning struct {
 	separate bool
 }
 
+var NoTokens []int = []int{}
+
 func CreateRawMeaning(tokenMap map[string]RawTokenDefine, outputSeparate bool) RawMeaning {
 	return RawMeaning{
+		Meaning:  CreateMeaning(nil),
 		tokenMap: tokenMap,
 		separate: outputSeparate,
 	}
@@ -82,8 +87,4 @@ func (meaning *RawMeaning) Prepare(stream *TokenStream) {
 	}
 
 	meaning.Meaning.Iter = meaning.Meaning.Stream.Iterator()
-}
-func (meaning *RawMeaning) Next() *Token {
-
-	return meaning.Meaning.Next()
 }

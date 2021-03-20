@@ -22,7 +22,7 @@ func (meaning *PatternMeaning) Prepare(stream *TokenStream) {
 	meaning.Meaning.Prepare(stream)
 }
 
-func (meaning *PatternMeaning) Mext() *Token {
+func (meaning *PatternMeaning) Next() *Token {
 
 	for {
 
