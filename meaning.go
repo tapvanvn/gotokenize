@@ -6,6 +6,7 @@ type IMeaning interface {
 	Next() *Token
 	GetIter() *TokenStreamIterator
 	GetStream() *TokenStream
+	SetStream(stream TokenStream)
 	Clone() IMeaning
 	GetSource() IMeaning
 }
@@ -77,6 +78,11 @@ func (meaning *Meaning) GetIter() *TokenStreamIterator {
 
 func (meaning *Meaning) GetStream() *TokenStream {
 	return &meaning.Stream
+}
+
+func (meaning *Meaning) SetStream(stream TokenStream) {
+	meaning.Stream = stream
+	meaning.Iter = meaning.Stream.Iterator()
 }
 
 func (meaning *Meaning) Clone() IMeaning {

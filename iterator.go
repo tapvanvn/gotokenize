@@ -2,7 +2,6 @@ package gotokenize
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -122,9 +121,9 @@ func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFou
 
 	marks := []Mark{}
 
-	log := &Log{}
+	//log := &Log{}
 
-	defer log.Print()
+	//defer log.Print()
 
 	for _, pattern := range patterns {
 
@@ -151,7 +150,7 @@ func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFou
 
 				marks = append(marks, mark)
 
-				log.Append(fmt.Sprintf("=>[%s] \n", ColorSuccess()))
+				//log.Append(fmt.Sprintf("=>[%s] \n", ColorSuccess()))
 
 				if stopWhenFound {
 
@@ -180,7 +179,7 @@ func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFou
 
 				childMark.Begin = iterator.Offset + iter
 
-				log.Append(fmt.Sprintf("\n\t[%s %s] %s %t", ColorType(patternToken.Type), ColorName(strconv.Itoa(patternToken.Type)), ColorContent(patternToken.Content), patternToken.IsPhraseUntil))
+				//log.Append(fmt.Sprintf("\n\t[%s %s] %s %t", ColorType(patternToken.Type), ColorName(strconv.Itoa(patternToken.Type)), ColorContent(patternToken.Content), patternToken.IsPhraseUntil))
 			}
 			var match bool = true
 
@@ -200,7 +199,7 @@ func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFou
 				}
 				iter++
 
-				log.Append(fmt.Sprintf("\n"))
+				//log.Append(fmt.Sprintf("\n"))
 
 				continue
 			}
@@ -212,7 +211,7 @@ func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFou
 
 					match = false
 
-					log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
+					//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
 				}
 				if patternToken.IsIgnoreInResult {
 
@@ -231,7 +230,7 @@ func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFou
 
 					match = false
 
-					log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
+					//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
 				}
 
 				if patternToken.IsIgnoreInResult {
@@ -304,7 +303,7 @@ func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFou
 			childMark.End = iterator.Offset + iter
 
 			iterToken++
-			log.Append(fmt.Sprintf("\n"))
+			//log.Append(fmt.Sprintf("\n"))
 		}
 	}
 	return marks

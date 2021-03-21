@@ -60,3 +60,25 @@ var JSONPatterns = []gotokenize.Pattern{
 		IsRemoveGlobalIgnore: true,
 	},
 }
+
+func JSONNaming(tokenType int) string {
+	switch tokenType {
+	case 0:
+		return "word"
+	case TokenJSONNumber:
+		return "number"
+	case TokenJSONNumberString:
+		return "number_string"
+	case TokenJSONBlock:
+		return "object"
+	case TokenJSONSquare:
+		return "array"
+	case TokenJSONPair:
+		return "pair"
+	case TokenJSONString:
+		return "string"
+	}
+	return "unknow"
+}
+
+var JSONGlobalNested = []int{TokenJSONBlock}

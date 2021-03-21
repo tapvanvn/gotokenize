@@ -1,12 +1,14 @@
 package json
 
-import "github.com/tapvanvn/gotokenize"
+import (
+	"github.com/tapvanvn/gotokenize"
+)
 
-type JSONMeaning struct {
+type JSONRawMeaning struct {
 	gotokenize.IMeaning
 }
 
-func CreateJSONMeaning() JSONMeaning {
+func CreateJSONMeaning() gotokenize.PatternMeaning {
 
 	tokenMap := map[string]gotokenize.RawTokenDefine{
 		".{}[]-\\,\":": {TokenType: TokenJSONOperator, Separate: true},
@@ -14,19 +16,19 @@ func CreateJSONMeaning() JSONMeaning {
 	}
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
-	patternMeaning := gotokenize.CreatePatternMeaning(&meaning, JSONPatterns, gotokenize.NoTokens, gotokenize.NoTokens)
-	return JSONMeaning{
-		IMeaning: &patternMeaning,
+	jsonRawMeaning := JSONRawMeaning{
+		IMeaning: &meaning,
 	}
+	return gotokenize.CreatePatternMeaning(&jsonRawMeaning, JSONPatterns, gotokenize.NoTokens, JSONGlobalNested)
 }
 
-func (meaning *JSONMeaning) Next() *gotokenize.Token {
+func (meaning *JSONRawMeaning) Next() *gotokenize.Token {
 	iter := meaning.GetIter()
 
 	return meaning.getNextMeaningToken(iter)
 }
 
-func (meaning *JSONMeaning) getNextMeaningToken(iter *gotokenize.TokenStreamIterator) *gotokenize.Token {
+func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.TokenStreamIterator) *gotokenize.Token {
 
 	for {
 		if iter.EOS() {
@@ -82,7 +84,7 @@ func (meaning *JSONMeaning) getNextMeaningToken(iter *gotokenize.TokenStreamIter
 
 }
 
-func (meaning *JSONMeaning) continueUntil(iter *gotokenize.TokenStreamIterator, currentToken *gotokenize.Token, reach string) {
+func (meaning *JSONRawMeaning) continueUntil(iter *gotokenize.TokenStreamIterator, currentToken *gotokenize.Token, reach string) {
 
 	var specialCharacter bool = false
 	var lastSpecialToken *gotokenize.Token = nil
@@ -123,7 +125,7 @@ func (meaning *JSONMeaning) continueUntil(iter *gotokenize.TokenStreamIterator, 
 	}
 }
 
-func (meaning *JSONMeaning) continueReadString(iter *gotokenize.TokenStreamIterator, currentToken *gotokenize.Token, reach string) {
+func (meaning *JSONRawMeaning) continueReadString(iter *gotokenize.TokenStreamIterator, currentToken *gotokenize.Token, reach string) {
 
 	var specialCharacter = false
 	var lastSpecialToken *gotokenize.Token = nil
@@ -163,7 +165,7 @@ func (meaning *JSONMeaning) continueReadString(iter *gotokenize.TokenStreamItera
 	}
 }
 
-func (meaning *JSONMeaning) continueNumber(iter *gotokenize.TokenStreamIterator, currentToken *gotokenize.Token) {
+func (meaning *JSONRawMeaning) continueNumber(iter *gotokenize.TokenStreamIterator, currentToken *gotokenize.Token) {
 
 	var token = iter.Get()
 	for {

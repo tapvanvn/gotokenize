@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/tapvanvn/gotokenize"
+	"github.com/tapvanvn/gotokenize/json"
 )
 
 func TestStream(t *testing.T) {
@@ -84,4 +85,32 @@ func TestPatternMeaning(t *testing.T) {
 		}
 		fmt.Println(token.Type, token.Content)
 	}
+}
+
+func TestJSONMeaning(t *testing.T) {
+	content := `{
+		"user_name": "test",
+		"age":30,
+		"asset":["gold","silver","land"]
+	}`
+
+	stream := gotokenize.CreateStream()
+	stream.Tokenize(content)
+
+	meaning := json.CreateJSONMeaning()
+	meaning.Prepare(&stream)
+
+	token := meaning.Next()
+	for {
+		if token == nil {
+			break
+		}
+		fmt.Println(token.Type, "[", json.JSONNaming(token.Type), "]")
+		if token.Children.Length() > 0 {
+			token.Children.Debug(1, json.JSONNaming)
+		}
+		token = meaning.Next()
+	}
+
+	//meaning.GetStream().Debug(0, json.JSONNaming)
 }

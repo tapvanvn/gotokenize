@@ -19,6 +19,20 @@ func CreatePatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []in
 	return *pattern
 }
 
+func (meaning *PatternMeaning) Prepare(stream *TokenStream) {
+	meaning.IMeaning.Prepare(stream)
+	tmpStream := CreateStream()
+	token := meaning.IMeaning.Next()
+	for {
+		if token == nil {
+			break
+		}
+		tmpStream.AddToken(*token)
+		token = meaning.IMeaning.Next()
+	}
+	meaning.IMeaning.SetStream(tmpStream)
+}
+
 func (meaning *PatternMeaning) Next() *Token {
 
 	iter := meaning.GetIter()
