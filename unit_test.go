@@ -67,16 +67,15 @@ func TestPatternMeaning(t *testing.T) {
 	stream.Tokenize(content)
 
 	tokenMap := map[string]gotokenize.RawTokenDefine{
-		"=": {
-			TokenType: 1,
-			Separate:  true,
-		},
+		"=": {TokenType: 1, Separate: true},
+		" ": {TokenType: 2, Separate: false},
 	}
 
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
-	meaning.Prepare(&stream)
 
-	patternMeaning := gotokenize.CreatePatternMeaning(&meaning.Stream, patterns, gotokenize.NoTokens, gotokenize.NoTokens)
+	patternMeaning := gotokenize.CreatePatternMeaning(&meaning, patterns, gotokenize.NoTokens, gotokenize.NoTokens)
+
+	patternMeaning.Prepare(&stream)
 
 	for {
 		token := patternMeaning.Next()

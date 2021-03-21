@@ -1,36 +1,35 @@
 package gotokenize
 
 type PatternMeaning struct {
-	Meaning
+	IMeaning
 	Patterns       []Pattern
 	IgnoreTokens   []int
 	TokenCanNested []int
 }
 
-func CreatePatternMeaning(stream *TokenStream, patterns []Pattern, ignoreTokens []int, tokenCanNested []int) PatternMeaning {
+func CreatePatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []int, tokenCanNested []int) PatternMeaning {
+
 	pattern := &PatternMeaning{
+		IMeaning:       parent,
 		Patterns:       patterns,
 		IgnoreTokens:   ignoreTokens,
 		TokenCanNested: tokenCanNested,
 	}
-	pattern.Prepare(stream)
+
 	return *pattern
-}
-
-func (meaning *PatternMeaning) Prepare(stream *TokenStream) {
-
-	meaning.Meaning.Prepare(stream)
 }
 
 func (meaning *PatternMeaning) Next() *Token {
 
+	iter := meaning.GetIter()
+
 	for {
 
-		if meaning.Meaning.Iter.EOS() {
+		if iter.EOS() {
 			break
 		}
 
-		marks := meaning.Meaning.Iter.FindPattern(meaning.Patterns, true, -1, meaning.IgnoreTokens)
+		marks := iter.FindPattern(meaning.Patterns, true, -1, meaning.IgnoreTokens)
 
 		if len(marks) > 0 {
 
@@ -47,11 +46,12 @@ func (meaning *PatternMeaning) Next() *Token {
 					continue
 				}
 
-				childToken := meaning.Meaning.Iter.GetMaskedToken(childMark, &mark.Ignores)
+				childToken := iter.GetMaskedToken(childMark, &mark.Ignores)
 
 				if childToken != nil && childMark.CanNested {
 
-					childMeaning := CreatePatternMeaning(&childToken.Children, meaning.Patterns, mark.Ignores, meaning.TokenCanNested)
+					childMeaning := CreatePatternMeaning(meaning.IMeaning.Clone(), meaning.Patterns, mark.Ignores, meaning.TokenCanNested)
+					childMeaning.Prepare(&childToken.Children)
 					//childMeaning = PatternMeaning.init(stream: child_token!.children, pattern_groups: self.pattern_groups, is_ignore_func: self.is_ignore_func)
 
 					subStream := CreateStream()
@@ -81,18 +81,18 @@ func (meaning *PatternMeaning) Next() *Token {
 				}
 			}
 
-			meaning.Meaning.Iter.Seek(mark.End)
+			iter.Seek(mark.End)
 
 			return &curToken
 
 		} else { // case no mark found
 
-			if normalToken := meaning.Meaning.Iter.Read(); normalToken != nil {
+			if normalToken := iter.Read(); normalToken != nil {
 
 				if normalToken.Children.Length() > 0 && IsContainToken(meaning.TokenCanNested, normalToken.Type) {
 
-					childMeaning := CreatePatternMeaning(&normalToken.Children, meaning.Patterns, meaning.IgnoreTokens, meaning.TokenCanNested)
-
+					childMeaning := CreatePatternMeaning(meaning.IMeaning.Clone(), meaning.Patterns, meaning.IgnoreTokens, meaning.TokenCanNested)
+					childMeaning.Prepare(&normalToken.Children)
 					subStream := CreateStream()
 
 					for {

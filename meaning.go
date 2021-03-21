@@ -4,6 +4,10 @@ package gotokenize
 type IMeaning interface {
 	Prepare(stream *TokenStream)
 	Next() *Token
+	GetIter() *TokenStreamIterator
+	GetStream() *TokenStream
+	Clone() IMeaning
+	GetSource() IMeaning
 }
 
 type Meaning struct {
@@ -65,4 +69,27 @@ func (meaning *Meaning) Prepare(stream *TokenStream) {
 		}
 		meaning.Iter = meaning.Stream.Iterator()
 	}
+}
+
+func (meaning *Meaning) GetIter() *TokenStreamIterator {
+	return &meaning.Iter
+}
+
+func (meaning *Meaning) GetStream() *TokenStream {
+	return &meaning.Stream
+}
+
+func (meaning *Meaning) Clone() IMeaning {
+	clone := &Meaning{
+		Stream: CreateStream(),
+	}
+	if meaning.source != nil {
+		clone.source = meaning.source.Clone()
+	}
+	clone.Iter = clone.Stream.Iterator()
+	return clone
+}
+
+func (meaning *Meaning) GetSource() IMeaning {
+	return meaning.source
 }
