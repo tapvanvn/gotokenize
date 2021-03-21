@@ -4,7 +4,7 @@ package gotokenize
 type IMeaning interface {
 	Prepare(stream *TokenStream)
 	Next() *Token
-	GetIter() *TokenStreamIterator
+	GetIter() *Iterator
 	GetStream() *TokenStream
 	SetStream(stream TokenStream)
 	Clone() IMeaning
@@ -14,7 +14,7 @@ type IMeaning interface {
 type Meaning struct {
 	source IMeaning
 	Stream TokenStream
-	Iter   TokenStreamIterator
+	Iter   Iterator
 }
 
 func CreateMeaning(source IMeaning) Meaning {
@@ -72,7 +72,7 @@ func (meaning *Meaning) Prepare(stream *TokenStream) {
 	}
 }
 
-func (meaning *Meaning) GetIter() *TokenStreamIterator {
+func (meaning *Meaning) GetIter() *Iterator {
 	return &meaning.Iter
 }
 

@@ -19,9 +19,9 @@ func CreateStream() TokenStream {
 }
 
 //Iterator make iterator of stream
-func (stream *TokenStream) Iterator() TokenStreamIterator {
+func (stream *TokenStream) Iterator() Iterator {
 
-	return TokenStreamIterator{Stream: stream, Offset: 0, Level: 0}
+	return Iterator{Stream: stream, Offset: 0, Level: 0}
 }
 
 //Tokenize tokenize a string

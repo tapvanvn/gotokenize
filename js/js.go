@@ -189,7 +189,7 @@ var JSPatterns = []gotokenize.Pattern{
 		},
 	},
 
-	//phattern else if block
+	//pattern else if block
 	{
 		Type:                 TokenJSElseIf,
 		IsRemoveGlobalIgnore: true,

@@ -1,34 +1,31 @@
-package json
+package css
 
-import (
-	"github.com/tapvanvn/gotokenize"
-)
+import "github.com/tapvanvn/gotokenize"
 
-type JSONRawMeaning struct {
+type CSSRawMeaning struct {
 	gotokenize.IMeaning
 }
 
-func CreateJSONMeaning() gotokenize.PatternMeaning {
-
+func CreateCSSMeaning() gotokenize.PatternMeaning {
 	tokenMap := map[string]gotokenize.RawTokenDefine{
-		".{}[]-\\,\":": {TokenType: TokenJSONOperator, Separate: true},
-		"0123456789":   {TokenType: TokenJSONNumber, Separate: false},
+		"=<>+*\"'!-:{};,()[]": {TokenType: TokenCSSOperator, Separate: true},
+		" \r\n":               {TokenType: TokenCSSSpace, Separate: false},
 	}
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
-
-	jsonRawMeaning := JSONRawMeaning{
+	cssRawMeaning := CSSRawMeaning{
 		IMeaning: &meaning,
 	}
-	return gotokenize.CreatePatternMeaning(&jsonRawMeaning, JSONPatterns, gotokenize.NoTokens, JSONGlobalNested)
+	return gotokenize.CreatePatternMeaning(&cssRawMeaning, CSSPatterns, CSSIgnores, CSSGlobalNested)
 }
 
-func (meaning *JSONRawMeaning) Next() *gotokenize.Token {
+func (meaning *CSSRawMeaning) Next() *gotokenize.Token {
+
 	iter := meaning.GetIter()
 
 	return meaning.getNextMeaningToken(iter)
 }
 
-func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {
+func (meaning *CSSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {
 
 	for {
 		if iter.EOS() {
@@ -40,7 +37,7 @@ func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *g
 
 			tmpToken := &gotokenize.Token{
 				Content: "{",
-				Type:    TokenJSONBlock,
+				Type:    TokenCSSBlock,
 			}
 
 			meaning.continueUntil(iter, tmpToken, "}")
@@ -51,7 +48,7 @@ func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *g
 
 			tmpToken := &gotokenize.Token{
 				Content: "[",
-				Type:    TokenJSONSquare,
+				Type:    TokenCSSSquare,
 			}
 
 			meaning.continueUntil(iter, tmpToken, "]")
@@ -62,13 +59,13 @@ func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *g
 
 			tmpToken := &gotokenize.Token{
 				Content: token.Content,
-				Type:    TokenJSONString,
+				Type:    TokenCSSString,
 			}
 			meaning.continueReadString(iter, tmpToken, token.Content)
 
 			return tmpToken
 
-		} else if token.Content == "." || token.Content == "-" || token.Type == TokenJSONNumber {
+		} /*else if token.Content == "." || token.Content == "-" || token.Type == TokenJSONNumber {
 			tmpToken := &gotokenize.Token{
 				Content: token.Content,
 				Type:    TokenJSONNumberString,
@@ -76,7 +73,7 @@ func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *g
 			tmpToken.Children.AddToken(*token)
 			meaning.continueNumber(iter, tmpToken)
 			return tmpToken
-		}
+		}*/
 
 		return token
 	}
@@ -84,7 +81,7 @@ func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *g
 
 }
 
-func (meaning *JSONRawMeaning) continueUntil(iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
+func (meaning *CSSRawMeaning) continueUntil(iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
 
 	var specialCharacter bool = false
 	var lastSpecialToken *gotokenize.Token = nil
@@ -125,7 +122,7 @@ func (meaning *JSONRawMeaning) continueUntil(iter *gotokenize.Iterator, currentT
 	}
 }
 
-func (meaning *JSONRawMeaning) continueReadString(iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
+func (meaning *CSSRawMeaning) continueReadString(iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
 
 	var specialCharacter = false
 	var lastSpecialToken *gotokenize.Token = nil
@@ -162,21 +159,5 @@ func (meaning *JSONRawMeaning) continueReadString(iter *gotokenize.Iterator, cur
 			currentToken.Children.AddToken(*token)
 		}
 
-	}
-}
-
-func (meaning *JSONRawMeaning) continueNumber(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
-
-	var token = iter.Get()
-	for {
-
-		if token != nil && (token.Type == TokenJSONNumber || token.Content == ".") {
-
-			currentToken.Children.AddToken(*token)
-			_ = iter.Read()
-			token = iter.Get()
-		} else {
-			break
-		}
 	}
 }

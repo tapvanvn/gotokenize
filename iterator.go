@@ -5,15 +5,15 @@ import (
 	"strings"
 )
 
-//TokenStreamIterator struct use to access token stream
-type TokenStreamIterator struct {
+//Iterator struct use to access token stream
+type Iterator struct {
 	Stream *TokenStream
 	Offset int
 	Level  int
 }
 
 //DebugMark debug mark
-func (iterator *TokenStreamIterator) DebugMark(level int, mark *Mark, ignores *[]int, fnName func(int) string) {
+func (iterator *Iterator) DebugMark(level int, mark *Mark, ignores *[]int, fnName func(int) string) {
 
 	length := mark.End - mark.Begin
 
@@ -74,7 +74,7 @@ func (iterator *TokenStreamIterator) DebugMark(level int, mark *Mark, ignores *[
 }
 
 //Get read token but not move pointer
-func (iterator *TokenStreamIterator) Get() *Token {
+func (iterator *Iterator) Get() *Token {
 
 	if iterator.Offset <= len(iterator.Stream.Tokens)-1 {
 
@@ -86,7 +86,7 @@ func (iterator *TokenStreamIterator) Get() *Token {
 }
 
 //GetBy get token at (offset + iterator) position
-func (iterator *TokenStreamIterator) GetBy(iter int) *Token {
+func (iterator *Iterator) GetBy(iter int) *Token {
 
 	if iterator.Offset+iter <= len(iterator.Stream.Tokens)-1 {
 
@@ -98,7 +98,7 @@ func (iterator *TokenStreamIterator) GetBy(iter int) *Token {
 }
 
 //GetAt get token at offset
-func (iterator *TokenStreamIterator) GetAt(offset int) *Token {
+func (iterator *Iterator) GetAt(offset int) *Token {
 
 	if offset <= len(iterator.Stream.Tokens)-1 {
 
@@ -117,7 +117,7 @@ func IsContainToken(ignoreTokens []int, tokenType int) bool {
 }
 
 //FindPattern search pattern
-func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFound bool, phraseBreak int, ignoreTokens []int) []Mark {
+func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, phraseBreak int, ignoreTokens []int) []Mark {
 
 	marks := []Mark{}
 
@@ -310,7 +310,7 @@ func (iterator *TokenStreamIterator) FindPattern(patterns []Pattern, stopWhenFou
 }
 
 //GetMaskedToken get token from mask
-func (iterator *TokenStreamIterator) GetMaskedToken(mark *Mark, ignores *[]int) *Token {
+func (iterator *Iterator) GetMaskedToken(mark *Mark, ignores *[]int) *Token {
 
 	if mark.IsTokenStream {
 
@@ -366,7 +366,7 @@ func (iterator *TokenStreamIterator) GetMaskedToken(mark *Mark, ignores *[]int) 
 }
 
 //Read read token
-func (iterator *TokenStreamIterator) Read() *Token {
+func (iterator *Iterator) Read() *Token {
 
 	if iterator.Offset <= len(iterator.Stream.Tokens)-1 {
 
@@ -380,25 +380,25 @@ func (iterator *TokenStreamIterator) Read() *Token {
 }
 
 //Reset reset to begin
-func (iterator *TokenStreamIterator) Reset() {
+func (iterator *Iterator) Reset() {
 
 	iterator.Offset = 0
 }
 
 //EOS is end of stream
-func (iterator *TokenStreamIterator) EOS() bool {
+func (iterator *Iterator) EOS() bool {
 
 	return iterator.Offset >= len(iterator.Stream.Tokens)
 }
 
 //FirstType get first token of type
-func (iterator *TokenStreamIterator) FirstType(tokenType int) *Token {
+func (iterator *Iterator) FirstType(tokenType int) *Token {
 	iterator.Reset()
 	return iterator.NextType(tokenType)
 }
 
 //NextType read from current position to next match of token type
-func (iterator *TokenStreamIterator) NextType(tokenType int) *Token {
+func (iterator *Iterator) NextType(tokenType int) *Token {
 
 	for {
 		if iterator.EOS() {
@@ -416,6 +416,6 @@ func (iterator *TokenStreamIterator) NextType(tokenType int) *Token {
 }
 
 //Seek move to offset
-func (iterator *TokenStreamIterator) Seek(offset int) {
+func (iterator *Iterator) Seek(offset int) {
 	iterator.Offset = offset
 }
