@@ -10,7 +10,7 @@ type XMLRawMeaning struct {
 	gotokenize.IMeaning
 }
 
-func CreateXMLMeaning() gotokenize.PatternMeaning {
+func CreateXMLRawMeaning() gotokenize.PatternMeaning {
 
 	tokenMap := map[string]gotokenize.RawTokenDefine{
 		"=<>/\\\"'!-": {TokenType: TokenXMLOperator, Separate: true},
@@ -32,38 +32,37 @@ func (meaning *XMLRawMeaning) Next() *gotokenize.Token {
 }
 
 func (meaning *XMLRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {
-	for {
-		if iter.EOS() {
-			break
-		}
-		token := iter.Read()
-		if token.Content == "<" {
-			nextToken := iter.Get()
-			if nextToken != nil && nextToken.Content == "!" {
-				tmpToken := &gotokenize.Token{
-					Type: TokenXMLComment,
-				}
-				meaning.continueComment(iter, tmpToken)
-				return tmpToken
-			} else {
-				tagToken := &gotokenize.Token{
-					Type: TokenXMLTagUnknown,
-				}
-				meaning.continueTag(iter, tagToken)
-				return tagToken
-			}
-		} else if token.Content == "\"" || token.Content == "'" {
 
-			tmpToken := &gotokenize.Token{
-				Content: token.Content,
-				Type:    TokenXMLString,
-			}
-			meaning.continueReadString(iter, tmpToken, token.Content)
-			return tmpToken
-		}
-		return token
+	if iter.EOS() {
+		return nil
 	}
-	return nil
+	token := iter.Read()
+	if token.Content == "<" {
+		nextToken := iter.Get()
+		if nextToken != nil && nextToken.Content == "!" {
+			tmpToken := &gotokenize.Token{
+				Type: TokenXMLComment,
+			}
+			meaning.continueComment(iter, tmpToken)
+			return tmpToken
+		} else {
+			tagToken := &gotokenize.Token{
+				Type: TokenXMLTagUnknown,
+			}
+			meaning.continueTag(iter, tagToken)
+			return tagToken
+		}
+	} else if token.Content == "\"" || token.Content == "'" {
+
+		tmpToken := &gotokenize.Token{
+			Content: token.Content,
+			Type:    TokenXMLString,
+		}
+		meaning.continueReadString(iter, tmpToken, token.Content)
+		return tmpToken
+	}
+	return token
+
 }
 
 func (meaning *XMLRawMeaning) continueTag(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {

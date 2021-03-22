@@ -117,6 +117,36 @@ func TestJSONMeaning(t *testing.T) {
 	//meaning.GetStream().Debug(0, json.JSONNaming)
 }
 
+func TestXMLRawMeaning(t *testing.T) {
+	content := `<xml abc="def">
+		<next/>
+		<name>tapvanvn</name>
+		<debug>{{ahshsdfkjlsdf}}</debug>
+		<!--
+			comment here
+		-->
+	</xml>`
+
+	stream := gotokenize.CreateStream()
+	stream.Tokenize(content)
+
+	meaning := xml.CreateXMLRawMeaning()
+	meaning.Prepare(&stream)
+
+	token := meaning.Next()
+
+	for {
+		if token == nil {
+			break
+		}
+		fmt.Println(token.Type, "[", xml.XMLNaming(token.Type), "]", token.Content)
+		if token.Children.Length() > 0 {
+			token.Children.Debug(1, xml.XMLNaming)
+		}
+		token = meaning.Next()
+	}
+}
+
 func TestXMLMeaning(t *testing.T) {
 	content := `<xml abc="def">
 		<next/>
