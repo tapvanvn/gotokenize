@@ -39,12 +39,19 @@ func (meaning *XMLRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *go
 	token := iter.Read()
 	if token.Content == "<" {
 		nextToken := iter.Get()
-		if nextToken != nil && nextToken.Content == "!" {
+		third := iter.GetBy(2)
+		forth := iter.GetBy(3)
+		check := nextToken != nil && nextToken.Content == "!"
+		check = check && third != nil && forth != nil
+		check = check && third.Content == forth.Content && third.Content == "-"
+		if check {
+
 			tmpToken := &gotokenize.Token{
 				Type: TokenXMLComment,
 			}
 			meaning.continueComment(iter, tmpToken)
 			return tmpToken
+
 		} else {
 			tagToken := &gotokenize.Token{
 				Type: TokenXMLTagUnknown,
