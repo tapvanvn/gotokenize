@@ -39,8 +39,8 @@ func (meaning *XMLRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *go
 	token := iter.Read()
 	if token.Content == "<" {
 		nextToken := iter.Get()
-		third := iter.GetBy(2)
-		forth := iter.GetBy(3)
+		third := iter.GetBy(1)
+		forth := iter.GetBy(2)
 		check := nextToken != nil && nextToken.Content == "!"
 		check = check && third != nil && forth != nil
 		check = check && third.Content == forth.Content && third.Content == "-"
@@ -145,7 +145,7 @@ func (meaning *XMLRawMeaning) continueReadString(iter *gotokenize.Iterator, curr
 			}
 		} else {
 
-			if specialCharacter && token.Content != reach {
+			if specialCharacter {
 
 				currentToken.Children.AddToken(*lastSpecialToken)
 			}

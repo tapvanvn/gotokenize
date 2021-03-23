@@ -42,12 +42,14 @@ func (meaning *XMLHightMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *
 			Type:    TokenXMLElement,
 			Content: token.Content,
 		}
+		tagName := token.Content
 		token.Content = ""
 		token.Type = TokenXMLElementAttributes
 		tmpToken.Children.AddToken(*token)
-		meaning.continueTag(token.Content, iter, tmpToken)
+		meaning.continueTag(tagName, iter, tmpToken)
 		return tmpToken
 	} else if token.Type == TokenXMLTagUnknown {
+
 		tmpToken := &gotokenize.Token{
 			Type:    TokenXMLElement,
 			Content: token.Content,
@@ -68,6 +70,8 @@ func (meaning *XMLHightMeaning) continueTag(name string, iter *gotokenize.Iterat
 		token := meaning.getNextMeaningToken(iter)
 		if token.Type == TokenXMLTagEnd && token.Content == name {
 			break
+		} else if token.Type == TokenXMLTagEnd {
+			println("end ", token.Content, "want", name)
 		}
 		currentToken.Children.AddToken(*token)
 	}
