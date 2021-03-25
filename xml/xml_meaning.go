@@ -98,7 +98,7 @@ func (meaning *XMLRawMeaning) continueTag(iter *gotokenize.Iterator, currentToke
 		} else if token.Type == 0 && token.Content != " " {
 			if currentToken.Content == "" {
 
-				currentToken.Content = token.Content
+				currentToken.Content = stackContent + token.Content
 			} else {
 				currentToken.Children.AddToken(*token)
 			}
