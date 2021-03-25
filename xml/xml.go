@@ -14,8 +14,10 @@ const (
 	TokenXMLComment    = 104
 
 	TokenXMLElement           = 1000
-	TokenXMLElementAttributes = 1001
-	TokenXMLElementBody       = 1002
+	TokenXMLSingleElement     = 1001
+	TokenXMLEndElement        = 1002
+	TokenXMLElementAttributes = 1003
+	TokenXMLElementBody       = 1004
 )
 
 var XMLGlobalNested = []int{

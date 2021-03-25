@@ -51,7 +51,7 @@ func (meaning *XMLHightMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *
 	} else if token.Type == TokenXMLTagUnknown {
 
 		tmpToken := &gotokenize.Token{
-			Type:    TokenXMLElement,
+			Type:    TokenXMLEndElement,
 			Content: token.Content,
 		}
 		token.Content = ""
