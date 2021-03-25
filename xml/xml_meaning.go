@@ -77,7 +77,7 @@ func (meaning *XMLRawMeaning) continueTag(iter *gotokenize.Iterator, currentToke
 	var reach string = ">"
 	var closeTag = false
 	var posEndTag = false
-
+	var stackContent = ""
 	for {
 		if iter.EOS() {
 			break
@@ -104,8 +104,11 @@ func (meaning *XMLRawMeaning) continueTag(iter *gotokenize.Iterator, currentToke
 			}
 			posEndTag = false
 		} else if token.Type != TokenXMLSpace {
-
-			currentToken.Children.AddToken(*token)
+			if currentToken.Content == "" {
+				stackContent += token.Content
+			} else {
+				currentToken.Children.AddToken(*token)
+			}
 			posEndTag = false
 		}
 	}
