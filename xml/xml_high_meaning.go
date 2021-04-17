@@ -45,6 +45,7 @@ func (meaning *XMLHightMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *
 		tagName := token.Content
 		token.Content = ""
 		token.Type = TokenXMLElementAttributes
+
 		tmpToken.Children.AddToken(*token)
 		meaning.continueTag(tagName, iter, tmpToken)
 		return tmpToken

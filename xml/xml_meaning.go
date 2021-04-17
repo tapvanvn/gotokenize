@@ -1,6 +1,7 @@
 package xml
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/tapvanvn/gotokenize"
@@ -13,8 +14,8 @@ type XMLRawMeaning struct {
 func CreateXMLRawMeaning() gotokenize.PatternMeaning {
 
 	tokenMap := map[string]gotokenize.RawTokenDefine{
-		"=<>/\\\"'!-": {TokenType: TokenXMLOperator, Separate: true},
-		" \r\n":       {TokenType: TokenXMLSpace, Separate: false},
+		"=<>/\\\"'!": {TokenType: TokenXMLOperator, Separate: true},
+		" \r\n":      {TokenType: TokenXMLSpace, Separate: false},
 	}
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
@@ -40,12 +41,11 @@ func (meaning *XMLRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *go
 	if token.Content == "<" {
 		nextToken := iter.Get()
 		third := iter.GetBy(1)
-		forth := iter.GetBy(2)
 		check := nextToken != nil && nextToken.Content == "!"
-		check = check && third != nil && forth != nil
-		check = check && third.Content == forth.Content && third.Content == "-"
+		check = check && third != nil
+		check = check && third.Content == "--"
 		if check {
-
+			fmt.Println("found comment")
 			tmpToken := &gotokenize.Token{
 				Type: TokenXMLComment,
 			}
