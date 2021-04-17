@@ -31,7 +31,7 @@ func (stream *TokenStream) Tokenize(content string) {
 
 	for _, rune := range runes {
 
-		token := Token{Content: string(rune)}
+		token := Token{Content: fmt.Sprintf("%c", rune)}
 
 		stream.AddToken(token)
 	}

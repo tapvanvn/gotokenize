@@ -151,6 +151,7 @@ func TestXMLMeaning(t *testing.T) {
 	content := `<xml abc="def">
 		<next/>
 		<name>tapvanvn</name>
+		<utf-8>kiểm tra</utf-8>
 		<debug>{{ahshsdfkjlsdf}}</debug>
 		<!--
 			comment here

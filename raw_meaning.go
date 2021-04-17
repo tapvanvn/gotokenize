@@ -2,6 +2,7 @@ package gotokenize
 
 import (
 	"strings"
+	"unicode/utf8"
 )
 
 type RawMeaning struct {
@@ -37,12 +38,15 @@ func (meaning *RawMeaning) Prepare(stream *TokenStream) {
 		}
 
 		token := iter.Read()
+		tmpContent := []byte(token.Content)
 
-		if len(token.Content) > 0 {
+		if len(tmpContent) > 0 {
 
 			found := false
-
-			char := token.Content[0:1]
+			utf8Rune, size := utf8.DecodeRune(tmpContent)
+			tmpContent = tmpContent[size:]
+			char := string(utf8Rune)
+			//char := token.Content[0:1]
 
 			for key, value := range meaning.tokenMap {
 
