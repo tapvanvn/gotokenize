@@ -42,7 +42,6 @@ const (
 
 	//TokenJSCraft      = 300
 	//TokenJSCraftDebug = 301
-
 	//TokenJSPatchStream = 400
 )
 
@@ -321,74 +320,6 @@ var JSPatterns = []gotokenize.Pattern{
 			{Type: TokenJSBracket},
 		},
 	},
-	/*
-		//pattern jscraft.require
-		{
-			Type:                 TokenJSCraft,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "jscraft", IsIgnoreInResult: true},
-				{Content: ".", IsIgnoreInResult: true},
-				{Content: "require"},
-				{Type: TokenJSBracket},
-			},
-		},
-
-		//pattern jscraft.template
-		{
-			Type:                 TokenJSCraft,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "jscraft", IsIgnoreInResult: true},
-				{Content: ".", IsIgnoreInResult: true},
-				{Content: "template"},
-				{Type: TokenJSBracket, CanNested: true},
-			},
-		},
-
-		//pattern jscraft.build
-		{
-			Type:                 TokenJSCraft,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "jscraft", IsIgnoreInResult: true},
-				{Content: ".", IsIgnoreInResult: true},
-				{Content: "build"},
-				{Type: TokenJSBracket, CanNested: true},
-			},
-		},
-
-		//pattern jscraft.conflict
-		{
-			Type:                 TokenJSCraft,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "jscraft", IsIgnoreInResult: true},
-				{Content: ".", IsIgnoreInResult: true},
-				{Content: "conflict"},
-				{Type: TokenJSBracket},
-			},
-		},
-
-		//pattern jscraft.conflict
-		{
-			Type:                 TokenJSCraft,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "jscraft", IsIgnoreInResult: true},
-				{Content: ".", IsIgnoreInResult: true},
-				{Content: "fetch"},
-				{Type: TokenJSBracket},
-			},
-		},
-
-		//pattern jscraft.conflict
-		{
-			Type:                 TokenJSCraftDebug,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "jscraft_debug", IsIgnoreInResult: true},
-				{Type: TokenJSBlock, CanNested: true},
-			},
-		},*/
 }
+
+var JSGlobalNested = []int{TokenJSBlock}

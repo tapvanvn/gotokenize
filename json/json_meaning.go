@@ -81,7 +81,6 @@ func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *g
 		return token
 	}
 	return nil
-
 }
 
 func (meaning *JSONRawMeaning) continueUntil(iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
