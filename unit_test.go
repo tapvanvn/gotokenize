@@ -6,6 +6,7 @@ import (
 
 	"github.com/tapvanvn/gotokenize"
 	"github.com/tapvanvn/gotokenize/css"
+	"github.com/tapvanvn/gotokenize/js"
 	"github.com/tapvanvn/gotokenize/json"
 	"github.com/tapvanvn/gotokenize/xml"
 )
@@ -210,6 +211,35 @@ func TestCSSMeaning(t *testing.T) {
 		fmt.Println(token.Type, "[", css.CSSNaming(token.Type), "]", token.Content)
 		if token.Children.Length() > 0 {
 			token.Children.Debug(1, css.CSSNaming)
+		}
+		token = meaning.Next()
+	}
+}
+
+func TestJSMeaning(t *testing.T) {
+	content := `
+	var a = b //comment
+	var c = d
+	function def() {
+
+		a = c
+	}`
+
+	stream := gotokenize.CreateStream()
+	stream.Tokenize(content)
+
+	meaning := js.CreateJSMeaning()
+	meaning.Prepare(&stream)
+
+	token := meaning.Next()
+
+	for {
+		if token == nil {
+			break
+		}
+		fmt.Println(token.Type, "[", js.JSTokenName(token.Type), "]", token.Content)
+		if token.Children.Length() > 0 {
+			token.Children.Debug(1, js.JSTokenName)
 		}
 		token = meaning.Next()
 	}

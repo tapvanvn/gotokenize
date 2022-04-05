@@ -17,13 +17,14 @@ func CreateJSMeaning() gotokenize.PatternMeaning {
 	}
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
-	jsonRawMeaning := JSRawMeaning{
+	jsRawMeaning := JSRawMeaning{
 		IMeaning: &meaning,
 	}
-	return gotokenize.CreatePatternMeaning(&jsonRawMeaning, JSPatterns, gotokenize.NoTokens, JSGlobalNested)
+	return gotokenize.CreatePatternMeaning(&jsRawMeaning, JSPatterns, gotokenize.NoTokens, JSGlobalNested)
 }
 
 func (meaning *JSRawMeaning) Next() *gotokenize.Token {
+
 	iter := meaning.GetIter()
 
 	return meaning.getNextMeaningToken(iter)
@@ -130,7 +131,6 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 					}
 				}
 			}
-
 		} else if token.Content == " " || token.Content == "\t" {
 
 			return meaning.getNextMeaningToken(iter)
@@ -138,9 +138,9 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 		} else if token.Content == ";" || token.Content == "\n" || token.Content == "\r" {
 
 			token.Type = TokenJSPhraseBreak
-		} else {
 			return token
 		}
+		return token
 	}
 	return nil
 }
@@ -317,18 +317,19 @@ func (meaning *JSRawMeaning) continueReadLineComment(iter *gotokenize.Iterator, 
 			break
 		}
 
-		tmpToken := iter.Read()
+		tmpToken := iter.Get()
 
 		if tmpToken.Content == "\n" || tmpToken.Content == "\r" {
 
 			break
 
 		} else {
-
+			_ = iter.Read()
 			currentToken.Children.AddToken(*tmpToken)
 		}
 	}
 }
+
 func (meaning *JSRawMeaning) continueReadBlockComment(iter *gotokenize.Iterator, currToken *gotokenize.Token) {
 
 	for {

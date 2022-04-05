@@ -8,8 +8,6 @@ import (
 //TokenStream token stream
 type TokenStream struct {
 	Tokens []Token
-	//Offset int
-	//Level  int
 }
 
 func CreateStream() TokenStream {
@@ -63,46 +61,48 @@ func (stream *TokenStream) Debug(level int, fnName func(int) string) {
 
 	for _, token := range stream.Tokens {
 
-		trimContent := strings.Trim(token.Content, " \n\r")
+		trimContent := strings.TrimSpace(token.Content)
 
-		if len(trimContent) > 0 || token.Children.Length() > 0 {
+		if len(trimContent) == 0 {
+			trimContent = ""
+		}
 
-			for i := 0; i <= level; i++ {
+		for i := 0; i <= level; i++ {
 
-				if i == 0 {
+			if i == 0 {
 
-					fmt.Printf("|%s ", ColorType(token.Type))
-
-				} else {
-
-					fmt.Print("| ")
-				}
-			}
-
-			if fnName != nil {
-
-				if len(trimContent) > 0 {
-
-					fmt.Printf("%s", ColorContent(token.Content))
-
-				} else {
-
-					fmt.Print("")
-				}
-				fmt.Printf("-%s\n", ColorName(fnName(token.Type)))
+				fmt.Printf("|%s ", ColorType(token.Type))
 
 			} else {
 
-				if len(trimContent) > 0 {
-
-					fmt.Println(token.Content)
-
-				} else {
-
-					fmt.Println("")
-				}
+				fmt.Print("| ")
 			}
 		}
+
+		if fnName != nil {
+
+			if len(trimContent) > 0 {
+
+				fmt.Printf("%s", ColorContent(token.Content))
+
+			} else {
+
+				fmt.Print("")
+			}
+			fmt.Printf("-%s\n", ColorName(fnName(token.Type)))
+
+		} else {
+
+			if len(trimContent) > 0 {
+
+				fmt.Println(token.Content)
+
+			} else {
+
+				fmt.Println("")
+			}
+		}
+
 		token.Children.Debug(level+1, fnName)
 	}
 }

@@ -167,14 +167,16 @@ func (meaning *JSONRawMeaning) continueReadString(iter *gotokenize.Iterator, cur
 func (meaning *JSONRawMeaning) continueNumber(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
 
 	var token = iter.Get()
-	for {
 
+	for {
 		if token != nil && (token.Type == TokenJSONNumber || token.Content == ".") {
 
 			currentToken.Children.AddToken(*token)
 			_ = iter.Read()
 			token = iter.Get()
+
 		} else {
+
 			break
 		}
 	}

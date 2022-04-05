@@ -1,20 +1,21 @@
 package js
 
 import (
+	"fmt"
+
 	"github.com/tapvanvn/gotokenize"
 )
 
 const (
-	TokenJSUnknown           = 0
-	TokenJSWord              = 1
-	TokenJSOperator          = 2
-	TokenJSPhraseBreak       = 3
-	TokenJSPhraseStrongBreak = 4 //need ; after
-	TokenJSScopeBegin        = 5
-	TokenJSScopeEnd          = 6
-	TokenJSWordBreak         = 7
-	TokenJSGlueBegin         = 8
-	TokenJSGlueEnd           = 9
+	TokenJSUnknown     = 0
+	TokenJSWord        = 1
+	TokenJSOperator    = 2
+	TokenJSPhraseBreak = 3
+	TokenJSScopeBegin  = 5
+	TokenJSScopeEnd    = 6
+	TokenJSWordBreak   = 7
+	TokenJSGlueBegin   = 8
+	TokenJSGlueEnd     = 9
 
 	TokenJSBracket        = 100
 	TokenJSBlock          = 101
@@ -39,10 +40,6 @@ const (
 	TokenJSSwitch         = 208
 	TokenJSWhile          = 209
 	TokenJSDo             = 210
-
-	//TokenJSCraft      = 300
-	//TokenJSCraftDebug = 301
-	//TokenJSPatchStream = 400
 )
 
 //JSTokenName return name from type of token
@@ -124,16 +121,8 @@ func JSTokenName(Type int) string {
 
 	case TokenJSDo:
 		return "do"
-
-	/*
-		case TokenJSCraft:
-				return "craft"
-
-			case TokenJSCraftDebug:
-				return "craft debug"
-	*/
 	default:
-		return "unknown"
+		return fmt.Sprintf("unknown-%d", Type)
 	}
 }
 
@@ -159,7 +148,6 @@ var JSKeyWords string = `
 var JSIgnores = []int{
 
 	TokenJSLineComment,
-
 	TokenJSBlockComment,
 }
 
