@@ -1,6 +1,6 @@
 package css
 
-import "github.com/tapvanvn/gotokenize"
+import "github.com/tapvanvn/gotokenize/v2"
 
 func NewCSSRawMeaning(baseMeaning gotokenize.IMeaning) *CSSRawMeaning {
 	return &CSSRawMeaning{

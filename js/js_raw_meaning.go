@@ -1,7 +1,7 @@
 package js
 
 import (
-	"github.com/tapvanvn/gotokenize"
+	"github.com/tapvanvn/gotokenize/v2"
 )
 
 func NewJSRawMeaning() *JSRawMeaning {

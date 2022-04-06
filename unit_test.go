@@ -3,11 +3,11 @@ package gotokenize_test
 import (
 	"testing"
 
-	"github.com/tapvanvn/gotokenize"
-	"github.com/tapvanvn/gotokenize/css"
-	"github.com/tapvanvn/gotokenize/js"
-	"github.com/tapvanvn/gotokenize/json"
-	"github.com/tapvanvn/gotokenize/xml"
+	"github.com/tapvanvn/gotokenize/v2"
+	"github.com/tapvanvn/gotokenize/v2/css"
+	"github.com/tapvanvn/gotokenize/v2/js"
+	"github.com/tapvanvn/gotokenize/v2/json"
+	"github.com/tapvanvn/gotokenize/v2/xml"
 )
 
 func TestStream(t *testing.T) {

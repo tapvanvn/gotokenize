@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tapvanvn/gotokenize"
+	"github.com/tapvanvn/gotokenize/v2"
 )
 
 func NewXMLRawMeaning(baseMeaning gotokenize.IMeaning) *XMLRawMeaning {

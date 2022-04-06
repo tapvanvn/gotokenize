@@ -1,7 +1,7 @@
 package json
 
 import (
-	"github.com/tapvanvn/gotokenize"
+	"github.com/tapvanvn/gotokenize/v2"
 )
 
 const (

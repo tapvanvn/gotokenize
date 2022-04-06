@@ -1,6 +1,6 @@
 package xml
 
-import "github.com/tapvanvn/gotokenize"
+import "github.com/tapvanvn/gotokenize/v2"
 
 const (
 	TokenXMLSpace    = 1

@@ -1,6 +1,6 @@
 package css
 
-import "github.com/tapvanvn/gotokenize"
+import "github.com/tapvanvn/gotokenize/v2"
 
 const (
 	TokenCSSOperator     = 1
