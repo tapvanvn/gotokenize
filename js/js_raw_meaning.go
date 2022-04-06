@@ -155,6 +155,40 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 			token.Type = TokenJSPhraseBreak
 
 			return token
+
+		} else if token.Content == "!" { //!, !=, !==
+
+			nextToken := iter.Get()
+			if nextToken.Content == "=" {
+				token.Content += "="
+				_ = iter.Read()
+				nextToken2 := iter.Get()
+				if nextToken2.Content == "=" {
+					token.Content += "="
+					_ = iter.Read()
+				}
+			}
+			token.Type = TokenJSBinaryOperator
+			return token
+
+		} else if token.Content == "&" { // &, &&
+
+			nextToken := iter.Get()
+			if nextToken.Content == "&" {
+				token.Content += "&"
+				_ = iter.Read()
+			}
+			token.Type = TokenJSBinaryOperator
+			return token
+
+		} else if token.Content == "|" { // |, ||
+			nextToken := iter.Get()
+			if nextToken.Content == "|" {
+				token.Content += "|"
+				_ = iter.Read()
+			}
+			token.Type = TokenJSBinaryOperator
+			return token
 		}
 
 		if token.Type == 0 {
