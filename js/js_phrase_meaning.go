@@ -66,6 +66,20 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *
 		} else if token.Type == TokenJSPhraseBreak {
 			continue
 		}
+		if gotokenize.IsContainToken(JSGlobalNested, token.Type) {
+
+			childProc := gotokenize.NewMeaningProcessFromStream(&token.Children)
+			meaning.Prepare(childProc)
+			tmpStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
+			for {
+				childToken := meaning.Next(childProc)
+				if childToken == nil {
+					break
+				}
+				tmpStream.AddToken(*childToken)
+			}
+			token.Children = tmpStream
+		}
 		return token
 	}
 	return nil
