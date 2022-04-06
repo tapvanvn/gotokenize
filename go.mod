@@ -1,3 +1,3 @@
-module github.com/tapvanvn/gotokenize/v2
+module github.com/tapvanvn/gotokenize
 
 go 1.13
