@@ -22,7 +22,7 @@ func CreateRawMeaning(tokenMap map[string]RawTokenDefine, outputSeparate bool) R
 }
 
 func (meaning *RawMeaning) Prepare(stream *TokenStream) {
-
+	//fmt.Println("rawmeaning prepare")
 	meaning.Meaning.Stream = CreateStream()
 
 	curType := 0

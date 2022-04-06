@@ -2,7 +2,6 @@ package gotokenize
 
 import (
 	"fmt"
-	"strings"
 )
 
 //TokenStream token stream
@@ -44,9 +43,9 @@ func (stream *TokenStream) AddToken(token Token) {
 //AddTokenFromString split string to character and add each character as a token with type is providing type.
 func (stream *TokenStream) AddTokenFromString(tokenType int, str string) {
 
-	for _, r := range []rune(str) {
+	for r := range []rune(str) {
 
-		stream.AddToken(Token{Type: tokenType, Content: string(r)})
+		stream.AddToken(Token{Type: tokenType, Content: string(rune(r))})
 	}
 }
 
@@ -61,49 +60,7 @@ func (stream *TokenStream) Debug(level int, fnName func(int) string) {
 
 	for _, token := range stream.Tokens {
 
-		trimContent := strings.TrimSpace(token.Content)
-
-		if len(trimContent) == 0 {
-			trimContent = ""
-		}
-
-		for i := 0; i <= level; i++ {
-
-			if i == 0 {
-
-				fmt.Printf("|%s ", ColorType(token.Type))
-
-			} else {
-
-				fmt.Print("| ")
-			}
-		}
-
-		if fnName != nil {
-
-			if len(trimContent) > 0 {
-
-				fmt.Printf("%s", ColorContent(token.Content))
-
-			} else {
-
-				fmt.Print("")
-			}
-			fmt.Printf("-%s\n", ColorName(fnName(token.Type)))
-
-		} else {
-
-			if len(trimContent) > 0 {
-
-				fmt.Println(token.Content)
-
-			} else {
-
-				fmt.Println("")
-			}
-		}
-
-		token.Children.Debug(level+1, fnName)
+		token.Debug(level, fnName)
 	}
 }
 

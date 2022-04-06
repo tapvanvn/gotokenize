@@ -220,8 +220,10 @@ func TestJSMeaning(t *testing.T) {
 	content := `
 	var a = b //comment
 	var c = d
+	if(a==b)
+		d
 	function def() {
-
+		()=>{bef}
 		a = c
 	}`
 
@@ -237,10 +239,7 @@ func TestJSMeaning(t *testing.T) {
 		if token == nil {
 			break
 		}
-		fmt.Println(token.Type, "[", js.JSTokenName(token.Type), "]", token.Content)
-		if token.Children.Length() > 0 {
-			token.Children.Debug(1, js.JSTokenName)
-		}
+		token.Debug(0, js.JSTokenName)
 		token = meaning.Next()
 	}
 }

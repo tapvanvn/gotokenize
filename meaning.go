@@ -46,7 +46,7 @@ func (meaning *Meaning) Next() *Token {
 }
 
 func (meaning *Meaning) Prepare(stream *TokenStream) {
-
+	//fmt.Println("meaning prepare")
 	if meaning.source != nil {
 		meaning.source.Prepare(stream)
 		meaning.Stream = CreateStream()

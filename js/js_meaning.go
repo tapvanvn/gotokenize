@@ -8,6 +8,21 @@ type JSRawMeaning struct {
 	gotokenize.IMeaning
 }
 
+func (meaning *JSRawMeaning) Prepare(stream *gotokenize.TokenStream) {
+	//fmt.Println("jsrawmeaning prepare")
+	meaning.IMeaning.Prepare(stream)
+	newStream := gotokenize.CreateStream()
+	for {
+		token := meaning.IMeaning.Next()
+		if token == nil {
+			break
+		}
+		newStream.AddToken(*token)
+	}
+	meaning.IMeaning.SetStream(newStream)
+	//fmt.Println("end jsrawmeaning prepare")
+}
+
 func CreateJSMeaning() gotokenize.PatternMeaning {
 
 	tokenMap := map[string]gotokenize.RawTokenDefine{
@@ -18,9 +33,14 @@ func CreateJSMeaning() gotokenize.PatternMeaning {
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
 	jsRawMeaning := JSRawMeaning{
+
 		IMeaning: &meaning,
 	}
-	return gotokenize.CreatePatternMeaning(&jsRawMeaning, JSPatterns, gotokenize.NoTokens, JSGlobalNested)
+	jsPhraseMeaning := JSPhraseMeaning{
+
+		IMeaning: &jsRawMeaning,
+	}
+	return gotokenize.CreatePatternMeaning(&jsPhraseMeaning, JSPatterns, gotokenize.NoTokens, JSGlobalNested)
 }
 
 func (meaning *JSRawMeaning) Next() *gotokenize.Token {
@@ -34,6 +54,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 	for {
 		if iter.EOS() {
+
 			break
 		}
 		token := iter.Read()
@@ -138,8 +159,11 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 		} else if token.Content == ";" || token.Content == "\n" || token.Content == "\r" {
 
 			token.Type = TokenJSPhraseBreak
+
 			return token
 		}
+
+		token.Type = TokenJSWord
 		return token
 	}
 	return nil
@@ -353,5 +377,75 @@ func (meaning *JSRawMeaning) continueReadBlockComment(iter *gotokenize.Iterator,
 
 			currToken.Children.AddToken(*tmpToken)
 		}
+	}
+}
+
+type JSPhraseMeaning struct {
+	gotokenize.IMeaning
+}
+
+func (meaning *JSPhraseMeaning) Prepare(stream *gotokenize.TokenStream) {
+	//fmt.Println("jsphrase prepare")
+	meaning.IMeaning.Prepare(stream)
+	newStream := gotokenize.CreateStream()
+	for {
+		token := meaning.IMeaning.Next()
+		if token == nil {
+			break
+		}
+		newStream.AddToken(*token)
+	}
+	meaning.IMeaning.SetStream(newStream)
+	//fmt.Println("end jsphrase prepare")
+}
+
+func (meaning *JSPhraseMeaning) Next() *gotokenize.Token {
+
+	iter := meaning.GetIter()
+
+	return meaning.getNextMeaningToken(iter)
+}
+func (meaning *JSPhraseMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {
+
+	for {
+		if iter.EOS() {
+
+			break
+		}
+		token := iter.Read()
+
+		if gotokenize.IsContainToken(JSPhraseAllow, token.Type) {
+			tmpToken := &gotokenize.Token{
+				Content: token.Content,
+				Type:    TokenJSPhrase,
+			}
+			tmpToken.Children.AddToken(*token)
+			meaning.continuePhrase(iter, tmpToken)
+			return tmpToken
+		} else if token.Type == TokenJSPhraseBreak {
+			continue
+		}
+		return token
+	}
+	return nil
+}
+
+func (meaning *JSPhraseMeaning) continuePhrase(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
+
+	for {
+
+		if iter.EOS() {
+
+			break
+		}
+
+		tmpToken := iter.Get()
+
+		if gotokenize.IsContainToken(JSPhraseAllow, tmpToken.Type) {
+			_ = iter.Read()
+			currentToken.Children.AddToken(*tmpToken)
+			continue
+		}
+		break
 	}
 }

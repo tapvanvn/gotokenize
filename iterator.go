@@ -117,7 +117,7 @@ func IsContainToken(ignoreTokens []int, tokenType int) bool {
 }
 
 //FindPattern search pattern
-func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, phraseBreak int, ignoreTokens []int) []Mark {
+func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ignoreTokens []int) []Mark {
 
 	marks := []Mark{}
 
@@ -149,8 +149,6 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ph
 				mark := Mark{Type: pattern.Type, Begin: iterator.Offset, End: iterator.Offset + iter, Ignores: ignores, Children: children}
 
 				marks = append(marks, mark)
-
-				//log.Append(fmt.Sprintf("=>[%s] \n", ColorSuccess()))
 
 				if stopWhenFound {
 
@@ -191,7 +189,7 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ph
 				break
 			}
 
-			if nextToken.Type == phraseBreak || IsContainToken(ignoreTokens, nextToken.Type) {
+			/*if IsContainToken(ignoreTokens, nextToken.Type) {
 
 				if pattern.IsRemoveGlobalIgnore || patternToken.IsIgnoreInResult {
 
@@ -199,55 +197,12 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ph
 				}
 				iter++
 
-				//log.Append(fmt.Sprintf("\n"))
-
 				continue
-			}
-			if patternToken.Content != "" {
+			}*/
+			//If current pattern need find to until
+			if patternToken.IsPhraseUntil {
 
-				var currToken = iterator.GetBy(iter)
-
-				if currToken == nil || currToken.Content != patternToken.Content {
-
-					match = false
-
-					//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
-				}
-				if patternToken.IsIgnoreInResult {
-
-					ignores = append(ignores, iterator.Offset+iter+moveIter)
-				}
-
-				childMark.Begin = iterator.Offset + iter
-
-				moveIter = 1
-
-			} else if patternToken.Type > -1 {
-
-				var currToken = iterator.GetBy(iter)
-
-				if currToken == nil || (currToken.Type != phraseBreak && currToken.Type != patternToken.Type) {
-
-					match = false
-
-					//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
-				}
-
-				if patternToken.IsIgnoreInResult {
-
-					ignores = append(ignores, iterator.Offset+iter+moveIter)
-				}
-
-				if currToken.Type == patternToken.Type {
-
-					childMark.Begin = iterator.Offset + iter
-				}
-
-				moveIter = 1
-
-			} else if patternToken.IsPhraseUntil {
-
-				isWordFound := false
+				//isWordFound := false
 
 				for {
 					var currToken = iterator.GetBy(iter + moveIter)
@@ -256,11 +211,29 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ph
 
 						match = false
 
-						//log.Append(fmt.Sprintf("=>[%s]", ColorFail()))
-
 						break
 					}
-					if IsContainToken(ignoreTokens, currToken.Type) {
+					if (patternToken.Type > -1 && currToken.Type == patternToken.Type) || (len(patternToken.Content) > 0 && currToken.Content == patternToken.Content) {
+
+						if pattern.IsRemoveGlobalIgnore || patternToken.IsIgnoreInResult {
+
+							ignores = append(ignores, iterator.Offset+iter+moveIter)
+						}
+						moveIter++
+						break
+					} else if IsContainToken(ignoreTokens, currToken.Type) {
+
+						//if pattern.IsRemoveGlobalIgnore || patternToken.IsIgnoreInResult {
+
+						ignores = append(ignores, iterator.Offset+iter+moveIter)
+						//}
+
+						//continue
+					}
+
+					moveIter++
+
+					/*if IsContainToken(ignoreTokens, currToken.Type) {
 
 						if pattern.IsRemoveGlobalIgnore || patternToken.IsIgnoreInResult {
 
@@ -291,7 +264,50 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ph
 					}
 
 					moveIter++
+					*/
 				}
+			} else if patternToken.Content != "" {
+
+				var currToken = iterator.GetBy(iter)
+
+				if currToken == nil || currToken.Content != patternToken.Content {
+
+					match = false
+
+					//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
+				}
+				if patternToken.IsIgnoreInResult {
+
+					ignores = append(ignores, iterator.Offset+iter+moveIter)
+				}
+
+				childMark.Begin = iterator.Offset + iter
+
+				moveIter = 1
+
+			} else if patternToken.Type > -1 {
+
+				var currToken = iterator.GetBy(iter)
+
+				if currToken == nil || (currToken.Type != patternToken.Type) {
+
+					match = false
+
+					//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
+				}
+
+				if patternToken.IsIgnoreInResult {
+
+					ignores = append(ignores, iterator.Offset+iter+moveIter)
+				}
+
+				if currToken.Type == patternToken.Type {
+
+					childMark.Begin = iterator.Offset + iter
+				}
+
+				moveIter = 1
+
 			}
 			if !match {
 

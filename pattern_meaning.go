@@ -20,6 +20,7 @@ func CreatePatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []in
 }
 
 func (meaning *PatternMeaning) Prepare(stream *TokenStream) {
+	//fmt.Println("pattern prepare")
 	meaning.IMeaning.Prepare(stream)
 	tmpStream := CreateStream()
 	token := meaning.IMeaning.Next()
@@ -43,7 +44,7 @@ func (meaning *PatternMeaning) Next() *Token {
 			break
 		}
 
-		marks := iter.FindPattern(meaning.Patterns, true, -1, meaning.IgnoreTokens)
+		marks := iter.FindPattern(meaning.Patterns, true, meaning.IgnoreTokens)
 
 		if len(marks) > 0 {
 

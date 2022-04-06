@@ -151,6 +151,17 @@ var JSIgnores = []int{
 	TokenJSBlockComment,
 }
 
+var JSPhraseAllow = []int{
+	TokenJSWord,
+	TokenJSOperator,
+	TokenJSAssign,
+	TokenJSUnaryOperator,
+	TokenJSBinaryOperator,
+	TokenJSRegex,
+	TokenJSString,
+	TokenJSVariable,
+}
+
 //JSPatterns Patterns to detech structure of js
 var JSPatterns = []gotokenize.Pattern{
 
@@ -172,7 +183,7 @@ var JSPatterns = []gotokenize.Pattern{
 		Struct: []gotokenize.PatternToken{
 			{Content: "if", IsIgnoreInResult: true},
 			{Type: TokenJSBracket},
-			{ExportType: TokenJSPhrase, IsPhraseUntil: true},
+			{Type: TokenJSPhrase},
 		},
 	},
 
@@ -196,7 +207,7 @@ var JSPatterns = []gotokenize.Pattern{
 			{Content: "else", IsIgnoreInResult: true},
 			{Content: "if", IsIgnoreInResult: true},
 			{Type: TokenJSBracket},
-			{ExportType: TokenJSPhrase, IsPhraseUntil: true},
+			{Type: TokenJSPhrase},
 		},
 	},
 	//pattern else block
@@ -215,7 +226,7 @@ var JSPatterns = []gotokenize.Pattern{
 		IsRemoveGlobalIgnore: true,
 		Struct: []gotokenize.PatternToken{
 			{Content: "else", IsIgnoreInResult: true},
-			{ExportType: TokenJSPhrase, IsPhraseUntil: true},
+			{Type: TokenJSPhrase},
 		},
 	},
 
@@ -235,8 +246,8 @@ var JSPatterns = []gotokenize.Pattern{
 		Type:                 TokenJSFunction,
 		IsRemoveGlobalIgnore: true,
 		Struct: []gotokenize.PatternToken{
-			{Content: "function", IsIgnoreInResult: true},
-			{Type: TokenJSWord},
+			{Content: "function"},
+			//{Type: TokenJSWord},
 			{Type: TokenJSBracket},
 			{Type: TokenJSBlock, CanNested: true},
 		},
@@ -274,6 +285,7 @@ var JSPatterns = []gotokenize.Pattern{
 			{Type: TokenJSBlock, CanNested: true},
 		},
 	},
+
 	//pattern while phrase
 	{
 		Type:                 TokenJSWhile,
@@ -281,7 +293,7 @@ var JSPatterns = []gotokenize.Pattern{
 		Struct: []gotokenize.PatternToken{
 			{Content: "while", IsIgnoreInResult: true},
 			{Type: TokenJSBracket},
-			{ExportType: TokenJSPhrase, IsPhraseUntil: true},
+			{Type: TokenJSPhrase},
 		},
 	},
 
@@ -303,7 +315,7 @@ var JSPatterns = []gotokenize.Pattern{
 		IsRemoveGlobalIgnore: true,
 		Struct: []gotokenize.PatternToken{
 			{Content: "do", IsIgnoreInResult: true},
-			{ExportType: TokenJSPhrase, IsPhraseUntil: true},
+			{Type: TokenJSPhrase, IsPhraseUntil: true},
 			{Content: "while", IsIgnoreInResult: true},
 			{Type: TokenJSBracket},
 		},
