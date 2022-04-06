@@ -7,11 +7,17 @@ import (
 	"github.com/tapvanvn/gotokenize"
 )
 
-type XMLRawMeaning struct {
-	gotokenize.IMeaning
+func NewXMLRawMeaning(baseMeaning gotokenize.IMeaning) *XMLRawMeaning {
+	return &XMLRawMeaning{
+		AbstractMeaning: gotokenize.NewAbtractMeaning(baseMeaning),
+	}
 }
 
-func CreateXMLRawMeaning() gotokenize.PatternMeaning {
+type XMLRawMeaning struct {
+	*gotokenize.AbstractMeaning
+}
+
+func CreateXMLRawMeaning() *gotokenize.PatternMeaning {
 
 	tokenMap := map[string]gotokenize.RawTokenDefine{
 		"=<>/\\\"'!": {TokenType: TokenXMLOperator, Separate: true},
@@ -19,17 +25,14 @@ func CreateXMLRawMeaning() gotokenize.PatternMeaning {
 	}
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
-	xmlRawMeaning := XMLRawMeaning{
-		IMeaning: &meaning,
-	}
-	return gotokenize.CreatePatternMeaning(&xmlRawMeaning, XMLPatterns, XMLIgnores, XMLGlobalNested)
+	xmlRawMeaning := NewXMLRawMeaning(meaning)
+
+	return gotokenize.CreatePatternMeaning(xmlRawMeaning, XMLPatterns, XMLIgnores, XMLGlobalNested)
 }
 
-func (meaning *XMLRawMeaning) Next() *gotokenize.Token {
+func (meaning *XMLRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
-	iter := meaning.GetIter()
-
-	return meaning.getNextMeaningToken(iter)
+	return meaning.getNextMeaningToken(process.Iter)
 }
 
 func (meaning *XMLRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {

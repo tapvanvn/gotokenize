@@ -1,101 +1,125 @@
 package gotokenize
 
+import "fmt"
+
 //Meaning inteface for language meaning process
 type IMeaning interface {
-	Prepare(stream *TokenStream)
-	Next() *Token
-	GetIter() *Iterator
-	GetStream() *TokenStream
-	SetStream(stream TokenStream)
-	Clone() IMeaning
+	GetName() string
+	Prepare(process *MeaningProcess)
+	Next(process *MeaningProcess) *Token
 	GetSource() IMeaning
+	SetSource(IMeaning)
+	GetMeaningLevel() int
+	Clone() IMeaning
+	Propagate(func(meaning IMeaning))
 }
 
-type Meaning struct {
-	source IMeaning
-	Stream TokenStream
-	Iter   Iterator
-}
+func NewAbtractMeaning(base IMeaning) *AbstractMeaning {
 
-func CreateMeaning(source IMeaning) Meaning {
+	return &AbstractMeaning{
 
-	meaning := &Meaning{
-		Stream: CreateStream(),
+		BaseMeaning: base,
 	}
+}
 
-	if source != nil {
+type AbstractMeaning struct {
+	BaseMeaning IMeaning
+}
 
-		meaning.source = source
+func (meaning *AbstractMeaning) Prepare(process *MeaningProcess) {
 
-		for {
-			token := meaning.source.Next()
-			if token == nil {
-				break
+	if meaning.BaseMeaning != nil {
+
+		if process.Stream.MeaningLevel < meaning.GetMeaningLevel() {
+
+			meaning.BaseMeaning.Prepare(process)
+			//fmt.Printf("begin do prepare %s numToken:%d\n", meaning.BaseMeaning.GetName(), process.Stream.Length())
+			tmpStream := CreateStream(meaning.GetMeaningLevel())
+
+			for {
+				token := meaning.BaseMeaning.Next(process)
+				if token == nil {
+					break
+				}
+				tmpStream.AddToken(*token)
 			}
-			meaning.Stream.AddToken(*token)
+			//fmt.Printf("after do prepare %s numToken:%d\n", meaning.BaseMeaning.GetName(), tmpStream.Length())
+			process.SetStream(&tmpStream)
+
 		}
-
 	}
-	meaning.Iter = meaning.Stream.Iterator()
-
-	return *meaning
 }
 
-func (meaning *Meaning) Next() *Token {
-	return meaning.Iter.Read()
+func (meaning *AbstractMeaning) Next(process *MeaningProcess) *Token {
+
+	if meaning.BaseMeaning != nil {
+
+		return meaning.BaseMeaning.Next(process)
+	}
+	return process.Iter.Read()
+}
+func (meaning *AbstractMeaning) GetSource() IMeaning {
+
+	return meaning.BaseMeaning
 }
 
-func (meaning *Meaning) Prepare(stream *TokenStream) {
-	//fmt.Println("meaning prepare")
-	if meaning.source != nil {
-		meaning.source.Prepare(stream)
-		meaning.Stream = CreateStream()
-		for {
-			token := meaning.source.Next()
-			if token == nil {
-				break
-			}
-			meaning.Stream.AddToken(*token)
+func (meaning *AbstractMeaning) GetMeaningLevel() int {
+
+	if meaning.BaseMeaning != nil {
+
+		return meaning.BaseMeaning.GetMeaningLevel() + 1
+	}
+	return 0
+}
+
+func (meaning *AbstractMeaning) SetSource(baseMeaning IMeaning) {
+
+	if baseMeaning != nil {
+		if test, ok := baseMeaning.(*AbstractMeaning); ok {
+			meaning.BaseMeaning = test.BaseMeaning
+		} else {
+			meaning.BaseMeaning = baseMeaning
 		}
-		meaning.Iter = meaning.Stream.Iterator()
-	} else {
-		iter := stream.Iterator()
-		meaning.Stream = CreateStream()
-		for {
-			if iter.EOS() {
-				break
-			}
-			token := iter.Read()
-			meaning.Stream.AddToken(*token)
+		return
+	}
+	meaning.BaseMeaning = nil
+}
+
+func (meaning *AbstractMeaning) Clone() IMeaning {
+
+	if meaning.BaseMeaning != nil {
+
+		return meaning.BaseMeaning.Clone()
+	}
+	return nil
+}
+
+func (meaning *AbstractMeaning) Propagate(fn func(meaning IMeaning)) {
+
+	fn(meaning)
+	if meaning.BaseMeaning != nil {
+
+		meaning.BaseMeaning.Propagate(fn)
+
+	}
+}
+func (meaning *AbstractMeaning) GetName() string {
+
+	if meaning.BaseMeaning != nil {
+
+		return meaning.BaseMeaning.GetName()
+	}
+	return "AbstractMeaning"
+}
+
+func DebugMeaning(meaning IMeaning) {
+
+	if meaning != nil {
+
+		p := func(mean IMeaning) {
+
+			fmt.Printf("%s level:%d\n", mean.GetName(), mean.GetMeaningLevel())
 		}
-		meaning.Iter = meaning.Stream.Iterator()
+		meaning.Propagate(p)
 	}
-}
-
-func (meaning *Meaning) GetIter() *Iterator {
-	return &meaning.Iter
-}
-
-func (meaning *Meaning) GetStream() *TokenStream {
-	return &meaning.Stream
-}
-
-func (meaning *Meaning) SetStream(stream TokenStream) {
-	meaning.Stream = stream
-	meaning.Iter = meaning.Stream.Iterator()
-}
-
-func (meaning *Meaning) Clone() IMeaning {
-	clone := &Meaning{
-		Stream: CreateStream(),
-	}
-	if meaning.source != nil {
-		clone.source = meaning.source.Clone()
-	}
-	clone.Iter = clone.Stream.Iterator()
-	return clone
-}
-
-func (meaning *Meaning) GetSource() IMeaning {
-	return meaning.source
 }

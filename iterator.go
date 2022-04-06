@@ -107,8 +107,8 @@ func (iterator *Iterator) GetAt(offset int) *Token {
 	return nil
 }
 
-func IsContainToken(ignoreTokens []int, tokenType int) bool {
-	for _, i := range ignoreTokens {
+func IsContainToken(tokens []int, tokenType int) bool {
+	for _, i := range tokens {
 		if i == tokenType {
 			return true
 		}
@@ -189,7 +189,7 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 				break
 			}
 
-			/*if IsContainToken(ignoreTokens, nextToken.Type) {
+			if IsContainToken(ignoreTokens, nextToken.Type) {
 
 				if pattern.IsRemoveGlobalIgnore || patternToken.IsIgnoreInResult {
 
@@ -198,11 +198,9 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 				iter++
 
 				continue
-			}*/
+			}
 			//If current pattern need find to until
 			if patternToken.IsPhraseUntil {
-
-				//isWordFound := false
 
 				for {
 					var currToken = iterator.GetBy(iter + moveIter)
@@ -223,48 +221,11 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 						break
 					} else if IsContainToken(ignoreTokens, currToken.Type) {
 
-						//if pattern.IsRemoveGlobalIgnore || patternToken.IsIgnoreInResult {
-
 						ignores = append(ignores, iterator.Offset+iter+moveIter)
-						//}
 
-						//continue
 					}
 
 					moveIter++
-
-					/*if IsContainToken(ignoreTokens, currToken.Type) {
-
-						if pattern.IsRemoveGlobalIgnore || patternToken.IsIgnoreInResult {
-
-							ignores = append(ignores, iterator.Offset+iter+moveIter)
-						}
-						moveIter++
-
-						continue
-					}
-					if currToken.Type == phraseBreak && isWordFound {
-
-						if pattern.IsRemoveGlobalIgnore || patternToken.IsIgnoreInResult {
-
-							ignores = append(ignores, iterator.Offset+iter+moveIter)
-						}
-						moveIter++
-
-						break
-
-					} else if currToken.Type != phraseBreak && len(currToken.Content) > 0 {
-
-						isWordFound = true
-					}
-
-					if patternToken.IsIgnoreInResult {
-
-						ignores = append(ignores, iterator.Offset+iter+moveIter)
-					}
-
-					moveIter++
-					*/
 				}
 			} else if patternToken.Content != "" {
 
@@ -276,6 +237,7 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 
 					//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
 				}
+
 				if patternToken.IsIgnoreInResult {
 
 					ignores = append(ignores, iterator.Offset+iter+moveIter)
@@ -433,5 +395,6 @@ func (iterator *Iterator) NextType(tokenType int) *Token {
 
 //Seek move to offset
 func (iterator *Iterator) Seek(offset int) {
+
 	iterator.Offset = offset
 }

@@ -4,11 +4,17 @@ import (
 	"github.com/tapvanvn/gotokenize"
 )
 
-type JSONRawMeaning struct {
-	gotokenize.IMeaning
+func NewJSONRawMeaning(baseMeaning gotokenize.IMeaning) *JSONRawMeaning {
+	return &JSONRawMeaning{
+		AbstractMeaning: gotokenize.NewAbtractMeaning(baseMeaning),
+	}
 }
 
-func CreateJSONMeaning() gotokenize.PatternMeaning {
+type JSONRawMeaning struct {
+	*gotokenize.AbstractMeaning
+}
+
+func CreateJSONMeaning() *gotokenize.PatternMeaning {
 
 	tokenMap := map[string]gotokenize.RawTokenDefine{
 		".{}[]-\\,\":": {TokenType: TokenJSONOperator, Separate: true},
@@ -16,16 +22,14 @@ func CreateJSONMeaning() gotokenize.PatternMeaning {
 	}
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
-	jsonRawMeaning := JSONRawMeaning{
-		IMeaning: &meaning,
-	}
-	return gotokenize.CreatePatternMeaning(&jsonRawMeaning, JSONPatterns, gotokenize.NoTokens, JSONGlobalNested)
+	jsonRawMeaning := NewJSONRawMeaning(meaning)
+
+	return gotokenize.CreatePatternMeaning(jsonRawMeaning, JSONPatterns, gotokenize.NoTokens, JSONGlobalNested)
 }
 
-func (meaning *JSONRawMeaning) Next() *gotokenize.Token {
-	iter := meaning.GetIter()
+func (meaning *JSONRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
-	return meaning.getNextMeaningToken(iter)
+	return meaning.getNextMeaningToken(process.Iter)
 }
 
 func (meaning *JSONRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {

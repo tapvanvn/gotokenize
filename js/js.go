@@ -322,4 +322,4 @@ var JSPatterns = []gotokenize.Pattern{
 	},
 }
 
-var JSGlobalNested = []int{TokenJSBlock}
+var JSGlobalNested = []int{TokenJSBlock, TokenJSBracket, TokenJSBracketSquare}

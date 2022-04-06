@@ -2,27 +2,29 @@ package css
 
 import "github.com/tapvanvn/gotokenize"
 
-type CSSRawMeaning struct {
-	gotokenize.IMeaning
+func NewCSSRawMeaning(baseMeaning gotokenize.IMeaning) *CSSRawMeaning {
+	return &CSSRawMeaning{
+		AbstractMeaning: gotokenize.NewAbtractMeaning(baseMeaning),
+	}
 }
 
-func CreateCSSMeaning() gotokenize.PatternMeaning {
+type CSSRawMeaning struct {
+	*gotokenize.AbstractMeaning
+}
+
+func CreateCSSMeaning() *gotokenize.PatternMeaning {
 	tokenMap := map[string]gotokenize.RawTokenDefine{
 		"=<>+*\"'!-:{};,()[]": {TokenType: TokenCSSOperator, Separate: true},
 		" \r\n":               {TokenType: TokenCSSSpace, Separate: false},
 	}
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
-	cssRawMeaning := CSSRawMeaning{
-		IMeaning: &meaning,
-	}
-	return gotokenize.CreatePatternMeaning(&cssRawMeaning, CSSPatterns, CSSIgnores, CSSGlobalNested)
+	cssRawMeaning := NewCSSRawMeaning(meaning)
+	return gotokenize.CreatePatternMeaning(cssRawMeaning, CSSPatterns, CSSIgnores, CSSGlobalNested)
 }
 
-func (meaning *CSSRawMeaning) Next() *gotokenize.Token {
+func (meaning *CSSRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
-	iter := meaning.GetIter()
-
-	return meaning.getNextMeaningToken(iter)
+	return meaning.getNextMeaningToken(process.Iter)
 }
 
 func (meaning *CSSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {

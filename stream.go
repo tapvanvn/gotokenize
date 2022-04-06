@@ -6,19 +6,21 @@ import (
 
 //TokenStream token stream
 type TokenStream struct {
-	Tokens []Token
+	Tokens       []Token
+	MeaningLevel int //the level of meaning the stream got on a meaning process
 }
 
-func CreateStream() TokenStream {
+func CreateStream(meaningLevel int) TokenStream {
 	return TokenStream{
-		Tokens: []Token{},
+		Tokens:       []Token{},
+		MeaningLevel: meaningLevel,
 	}
 }
 
 //Iterator make iterator of stream
-func (stream *TokenStream) Iterator() Iterator {
+func (stream *TokenStream) Iterator() *Iterator {
 
-	return Iterator{Stream: stream, Offset: 0, Level: 0}
+	return &Iterator{Stream: stream, Offset: 0, Level: 0}
 }
 
 //Tokenize tokenize a string

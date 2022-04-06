@@ -6,28 +6,30 @@ import (
 )
 
 type RawMeaning struct {
-	Meaning
+	*AbstractMeaning
 	tokenMap map[string]RawTokenDefine
 	separate bool
 }
 
 var NoTokens []int = []int{}
 
-func CreateRawMeaning(tokenMap map[string]RawTokenDefine, outputSeparate bool) RawMeaning {
-	return RawMeaning{
-		Meaning:  CreateMeaning(nil),
-		tokenMap: tokenMap,
-		separate: outputSeparate,
+func CreateRawMeaning(tokenMap map[string]RawTokenDefine, outputSeparate bool) *RawMeaning {
+	return &RawMeaning{
+		AbstractMeaning: NewAbtractMeaning(nil),
+		tokenMap:        tokenMap,
+		separate:        outputSeparate,
 	}
 }
 
-func (meaning *RawMeaning) Prepare(stream *TokenStream) {
-	//fmt.Println("rawmeaning prepare")
-	meaning.Meaning.Stream = CreateStream()
+func (meaning *RawMeaning) Prepare(proc *MeaningProcess) {
 
+	newStream := CreateStream(meaning.GetMeaningLevel())
+	//fmt.Printf("raw meaning prepare:%d\n", proc.Stream.Length())
 	curType := 0
 
-	iter := stream.Iterator()
+	meaningLevel := meaning.GetMeaningLevel()
+
+	iter := proc.Stream.Iterator()
 
 	var curContent = ""
 
@@ -54,9 +56,12 @@ func (meaning *RawMeaning) Prepare(stream *TokenStream) {
 
 					if len(curContent) > 0 && (curType != value.TokenType || value.Separate) {
 
-						meaning.Meaning.Stream.AddToken(Token{
+						newStream.AddToken(Token{
 							Content: curContent,
 							Type:    curType,
+							Children: TokenStream{
+								MeaningLevel: meaningLevel,
+							},
 						})
 
 						curContent = ""
@@ -76,7 +81,13 @@ func (meaning *RawMeaning) Prepare(stream *TokenStream) {
 
 				if curType != 0 || meaning.separate {
 
-					meaning.Meaning.Stream.AddToken(Token{Content: curContent, Type: curType})
+					newStream.AddToken(Token{
+						Content: curContent,
+						Type:    curType,
+						Children: TokenStream{
+							MeaningLevel: meaningLevel,
+						},
+					})
 					curContent = ""
 				}
 				curContent += char
@@ -87,8 +98,22 @@ func (meaning *RawMeaning) Prepare(stream *TokenStream) {
 
 	if len(curContent) > 0 {
 
-		meaning.Meaning.Stream.AddToken(Token{Content: curContent, Type: curType})
+		newStream.AddToken(Token{
+			Content: curContent,
+			Type:    curType,
+			Children: TokenStream{
+				MeaningLevel: meaningLevel,
+			},
+		})
 	}
+	//fmt.Printf("after raw prepare:%d\n", newStream.Length())
+	proc.SetStream(&newStream)
+}
 
-	meaning.Meaning.Iter = meaning.Meaning.Stream.Iterator()
+func (meaning *RawMeaning) Clone() IMeaning {
+
+	return CreateRawMeaning(meaning.tokenMap, meaning.separate)
+}
+func (meaning *RawMeaning) GetName() string {
+	return "RawMeaning"
 }

@@ -1,19 +1,15 @@
 package gotokenize_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/tapvanvn/gotokenize"
-	"github.com/tapvanvn/gotokenize/css"
 	"github.com/tapvanvn/gotokenize/js"
-	"github.com/tapvanvn/gotokenize/json"
-	"github.com/tapvanvn/gotokenize/xml"
 )
 
 func TestStream(t *testing.T) {
 	content := "test=abc  ,\n  test2=def"
-	stream := gotokenize.CreateStream()
+	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 	checkContent := ""
 	iter := stream.Iterator()
@@ -37,12 +33,13 @@ func TestRawMeaning(t *testing.T) {
 			Separate:  true,
 		},
 	}
-	stream := gotokenize.CreateStream()
+	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
 	meaning := gotokenize.CreateRawMeaning(tokenMap, true)
-	meaning.Prepare(&stream)
+	meaning.Prepare(proc)
 	for {
-		token := meaning.Next()
+		token := meaning.Next(proc)
 		if token == nil {
 			break
 		}
@@ -67,7 +64,7 @@ func TestPatternMeaning(t *testing.T) {
 			IsRemoveGlobalIgnore: true,
 		},
 	}
-	stream := gotokenize.CreateStream()
+	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 
 	tokenMap := map[string]gotokenize.RawTokenDefine{
@@ -77,19 +74,27 @@ func TestPatternMeaning(t *testing.T) {
 
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
-	patternMeaning := gotokenize.CreatePatternMeaning(&meaning, patterns, gotokenize.NoTokens, gotokenize.NoTokens)
+	patternMeaning := gotokenize.CreatePatternMeaning(meaning, patterns, []int{2}, gotokenize.NoTokens)
 
-	patternMeaning.Prepare(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+
+	patternMeaning.Prepare(proc)
 
 	for {
-		token := patternMeaning.Next()
+		token := patternMeaning.Next(proc)
 		if token == nil {
 			break
 		}
-		fmt.Println(token.Type, token.Content)
+		token.Debug(0, nil)
+
+		if token.Type != 100 {
+			t.Fail()
+		}
 	}
+	gotokenize.DebugMeaning(patternMeaning)
 }
 
+/*
 func TestJSONMeaning(t *testing.T) {
 	content := `{
 		"user_name": "test",
@@ -97,7 +102,7 @@ func TestJSONMeaning(t *testing.T) {
 		"asset":["gold","silver","land"]
 	}`
 
-	stream := gotokenize.CreateStream()
+	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 
 	meaning := json.CreateJSONMeaning()
@@ -128,7 +133,7 @@ func TestXMLRawMeaning(t *testing.T) {
 		-->
 	</xml>`
 
-	stream := gotokenize.CreateStream()
+	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 
 	meaning := xml.CreateXMLRawMeaning()
@@ -159,7 +164,7 @@ func TestXMLMeaning(t *testing.T) {
 		-->
 	</xml>`
 
-	stream := gotokenize.CreateStream()
+	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 
 	meaning := xml.CreateXMLMeaning()
@@ -186,7 +191,7 @@ func TestCSSMeaning(t *testing.T) {
 			display: none !important;
 		}
 	}
-	
+
 	[type="input"]{
 		position: relative;
 		border-bottom-width: 1px;
@@ -196,7 +201,7 @@ func TestCSSMeaning(t *testing.T) {
 		border-bottom-color: gray;
 	}`
 
-	stream := gotokenize.CreateStream()
+	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 
 	meaning := css.CreateCSSMeaning()
@@ -215,7 +220,7 @@ func TestCSSMeaning(t *testing.T) {
 		token = meaning.Next()
 	}
 }
-
+*/
 func TestJSMeaning(t *testing.T) {
 	content := `
 	var a = b //comment
@@ -225,21 +230,28 @@ func TestJSMeaning(t *testing.T) {
 	function def() {
 		()=>{bef}
 		a = c
+		for(var a = 0; a< 10; a++) {
+			b()
+		}
 	}`
 
-	stream := gotokenize.CreateStream()
+	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 
 	meaning := js.CreateJSMeaning()
-	meaning.Prepare(&stream)
 
-	token := meaning.Next()
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+
+	meaning.Prepare(proc)
+
+	token := meaning.Next(proc)
 
 	for {
 		if token == nil {
 			break
 		}
 		token.Debug(0, js.JSTokenName)
-		token = meaning.Next()
+		token = meaning.Next(proc)
 	}
+	gotokenize.DebugMeaning(meaning)
 }

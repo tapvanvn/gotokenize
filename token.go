@@ -9,6 +9,16 @@ const (
 	TokenUnknown = iota
 )
 
+func NewToken(atLevel int, tokenType int, content string) *Token {
+	return &Token{
+		Type:    tokenType,
+		Content: content,
+		Children: TokenStream{
+			MeaningLevel: atLevel,
+		},
+	}
+}
+
 type Token struct {
 	Type     int
 	Content  string
