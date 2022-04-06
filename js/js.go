@@ -160,6 +160,9 @@ var JSPhraseAllow = []int{
 	TokenJSRegex,
 	TokenJSString,
 	TokenJSVariable,
+	TokenJSBlock,
+	TokenJSBracket,
+	TokenJSBracketSquare,
 }
 
 //JSPatterns Patterns to detech structure of js

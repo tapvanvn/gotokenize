@@ -268,13 +268,25 @@ func TestJSPhraseMeaning(t *testing.T) {
 func TestJSMeaning(t *testing.T) {
 	content := `
 
-	function def() {
-		()=>{bef}
-		a = c
-		for(var a = 0; a< 10; a++) {
-			b()
+	var IntSet = class {
+		constructor() {
+		  this.array = new Array();
 		}
-	}`
+		add(value) {
+		  let contains = this.contains(value);
+		  this.array[value | 0] = value | 0;
+		  return !contains;
+		}
+		contains(value) {
+		  return this.array[value | 0] != void 0;
+		}
+		remove(value) {
+		  this.array[value | 0] = void 0;
+		}
+		clear() {
+		  this.array.length = 0;
+		}
+	};`
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)

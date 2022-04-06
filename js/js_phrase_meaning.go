@@ -98,6 +98,21 @@ func (meaning *JSPhraseMeaning) continuePhrase(iter *gotokenize.Iterator, curren
 
 		if gotokenize.IsContainToken(JSPhraseAllow, tmpToken.Type) {
 			_ = iter.Read()
+
+			if gotokenize.IsContainToken(JSGlobalNested, tmpToken.Type) {
+
+				childProc := gotokenize.NewMeaningProcessFromStream(&tmpToken.Children)
+				meaning.Prepare(childProc)
+				tmpStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
+				for {
+					childToken := meaning.Next(childProc)
+					if childToken == nil {
+						break
+					}
+					tmpStream.AddToken(*childToken)
+				}
+				tmpToken.Children = tmpStream
+			}
 			currentToken.Children.AddToken(*tmpToken)
 			continue
 		}
