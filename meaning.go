@@ -118,7 +118,7 @@ func DebugMeaning(meaning IMeaning) {
 
 		p := func(mean IMeaning) {
 
-			fmt.Printf("%s level:%d\n", mean.GetName(), mean.GetMeaningLevel())
+			fmt.Printf("level:%d\t%s\n", mean.GetMeaningLevel(), mean.GetName())
 		}
 		meaning.Propagate(p)
 	}
