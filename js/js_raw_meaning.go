@@ -1,8 +1,6 @@
 package js
 
 import (
-	"fmt"
-
 	"github.com/tapvanvn/gotokenize"
 )
 
@@ -20,11 +18,9 @@ func (meaning *JSRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokeniz
 
 	token := meaning.getNextMeaningToken(process.Iter)
 
-	if token != nil && gotokenize.IsContainToken(JSGlobalNested, token.Type) {
+	if token != nil && token.Children.Length() > 0 && gotokenize.IsContainToken(JSGlobalNested, token.Type) {
 
 		childProcess := gotokenize.NewMeaningProcessFromStream(&token.Children)
-
-		fmt.Println("childToken level", token.Children.MeaningLevel)
 
 		subStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
 
@@ -54,7 +50,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 		}
 		token := iter.Read()
 
-		if token.Content == "{" {
+		if token.Content == "{" && token.Type != TokenJSBlock {
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBlock, "{")
 
@@ -62,7 +58,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 			return tmpToken
 
-		} else if token.Content == "[" {
+		} else if token.Content == "[" && token.Type != TokenJSBracketSquare {
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBracketSquare, "[")
 
@@ -70,7 +66,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 			return tmpToken
 
-		} else if token.Content == "(" {
+		} else if token.Content == "(" && token.Type != TokenJSBracket {
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBracket, "(")
 

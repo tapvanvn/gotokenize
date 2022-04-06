@@ -204,13 +204,70 @@ func TestCSSMeaning(t *testing.T) {
 		token.Children.Debug(0, css.CSSNaming)
 	}
 }
+func TestJSRawMeaning(t *testing.T) {
+	content := `
+
+	function  {
+		()=>{bef}
+		a = c
+	}`
+
+	stream := gotokenize.CreateStream(0)
+	stream.Tokenize(content)
+
+	meaning := js.CreateJSRawMeaning()
+
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+
+	meaning.Prepare(proc)
+
+	token := meaning.Next(proc)
+
+	for {
+		if token == nil {
+			break
+		}
+		token.Debug(0, js.JSTokenName)
+		token = meaning.Next(proc)
+	}
+	gotokenize.DebugMeaning(meaning)
+}
+
+func TestJSPhraseMeaning(t *testing.T) {
+	content := `
+
+	function def() {
+		()=>{bef}
+		a = c
+		for(var a = 0; a< 10; a++) {
+			b()
+		}
+	}`
+
+	stream := gotokenize.CreateStream(0)
+	stream.Tokenize(content)
+
+	meaning := js.CreateJSPhraseMeaning()
+
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+
+	meaning.Prepare(proc)
+
+	token := meaning.Next(proc)
+
+	for {
+		if token == nil {
+			break
+		}
+		token.Debug(0, js.JSTokenName)
+		token = meaning.Next(proc)
+	}
+	gotokenize.DebugMeaning(meaning)
+}
 
 func TestJSMeaning(t *testing.T) {
 	content := `
-	var a = b //comment
-	var c = d
-	if(a==b)
-		d
+
 	function def() {
 		()=>{bef}
 		a = c

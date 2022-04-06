@@ -11,7 +11,9 @@ type TokenStream struct {
 }
 
 func CreateStream(meaningLevel int) TokenStream {
+
 	return TokenStream{
+
 		Tokens:       []Token{},
 		MeaningLevel: meaningLevel,
 	}
