@@ -50,6 +50,7 @@ func (meaning *XMLHighMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *g
 	return token
 
 }
+
 func (meaning *XMLHighMeaning) continueTag(name string, iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
 	for {
 		if iter.EOS() {

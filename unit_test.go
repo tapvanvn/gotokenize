@@ -4,7 +4,10 @@ import (
 	"testing"
 
 	"github.com/tapvanvn/gotokenize"
+	"github.com/tapvanvn/gotokenize/css"
 	"github.com/tapvanvn/gotokenize/js"
+	"github.com/tapvanvn/gotokenize/json"
+	"github.com/tapvanvn/gotokenize/xml"
 )
 
 func TestStream(t *testing.T) {
@@ -94,7 +97,6 @@ func TestPatternMeaning(t *testing.T) {
 	gotokenize.DebugMeaning(patternMeaning)
 }
 
-/*
 func TestJSONMeaning(t *testing.T) {
 	content := `{
 		"user_name": "test",
@@ -104,23 +106,17 @@ func TestJSONMeaning(t *testing.T) {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
 	meaning := json.CreateJSONMeaning()
-	meaning.Prepare(&stream)
+	meaning.Prepare(proc)
 
-	token := meaning.Next()
 	for {
+		token := meaning.Next(proc)
 		if token == nil {
 			break
 		}
-		fmt.Println(token.Type, "[", json.JSONNaming(token.Type), "]")
-		if token.Children.Length() > 0 {
-			token.Children.Debug(1, json.JSONNaming)
-		}
-		token = meaning.Next()
+		token.Children.Debug(0, json.JSONNaming)
 	}
-
-	//meaning.GetStream().Debug(0, json.JSONNaming)
 }
 
 func TestXMLRawMeaning(t *testing.T) {
@@ -135,21 +131,18 @@ func TestXMLRawMeaning(t *testing.T) {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-
-	meaning := xml.CreateXMLRawMeaning()
-	meaning.Prepare(&stream)
-
-	token := meaning.Next()
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	meaning := xml.NewXMLHighMeaning()
+	meaning.Prepare(proc)
 
 	for {
+		token := meaning.Next(proc)
 		if token == nil {
 			break
 		}
-		fmt.Println(token.Type, "[", xml.XMLNaming(token.Type), "]", token.Content)
-		if token.Children.Length() > 0 {
-			token.Children.Debug(1, xml.XMLNaming)
-		}
-		token = meaning.Next()
+
+		token.Children.Debug(0, xml.XMLNaming)
+
 	}
 }
 
@@ -166,21 +159,17 @@ func TestXMLMeaning(t *testing.T) {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-
-	meaning := xml.CreateXMLMeaning()
-	meaning.Prepare(&stream)
-
-	token := meaning.Next()
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	meaning := xml.NewXMLHighMeaning()
+	meaning.Prepare(proc)
 
 	for {
+		token := meaning.Next(proc)
 		if token == nil {
 			break
 		}
-		fmt.Println(token.Type, "[", xml.XMLNaming(token.Type), "]", token.Content)
-		if token.Children.Length() > 0 {
-			token.Children.Debug(1, xml.XMLNaming)
-		}
-		token = meaning.Next()
+
+		token.Children.Debug(0, xml.XMLNaming)
 	}
 }
 
@@ -203,24 +192,19 @@ func TestCSSMeaning(t *testing.T) {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
 	meaning := css.CreateCSSMeaning()
-	meaning.Prepare(&stream)
-
-	token := meaning.Next()
+	meaning.Prepare(proc)
 
 	for {
+		token := meaning.Next(proc)
 		if token == nil {
 			break
 		}
-		fmt.Println(token.Type, "[", css.CSSNaming(token.Type), "]", token.Content)
-		if token.Children.Length() > 0 {
-			token.Children.Debug(1, css.CSSNaming)
-		}
-		token = meaning.Next()
+		token.Children.Debug(0, css.CSSNaming)
 	}
 }
-*/
+
 func TestJSMeaning(t *testing.T) {
 	content := `
 	var a = b //comment
