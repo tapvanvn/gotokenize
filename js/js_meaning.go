@@ -4,13 +4,14 @@ import (
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
-func CreateJSRawMeaning() *JSRawMeaning {
+var JSCharacterMap = map[string]gotokenize.RawTokenDefine{
 
-	tokenMap := map[string]gotokenize.RawTokenDefine{
+	"#%^&*-+/!<>=?:@\"'` \\;\r\n\t{}[](),.|": {TokenType: TokenJSOperator, Separate: true},
+}
 
-		"#%^&*-+/!<>=?:@\"'` \\;\r\n\t{}[](),.|": {TokenType: TokenJSOperator, Separate: true},
-	}
-	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
+func NewDefaultJSRawMeaning() *JSRawMeaning {
+
+	meaning := gotokenize.CreateRawMeaning(JSCharacterMap, false)
 
 	jsRawMeaning := NewJSRawMeaning()
 
@@ -19,36 +20,16 @@ func CreateJSRawMeaning() *JSRawMeaning {
 	return jsRawMeaning
 }
 
-func CreateJSPhraseMeaning() *JSPhraseMeaning {
+func NewDefaultJSMeaning() *gotokenize.PatternMeaning {
 
-	tokenMap := map[string]gotokenize.RawTokenDefine{
+	jsRawMeaning := NewDefaultJSRawMeaning()
 
-		"#%^&*-+/!<>=?:@\"'` \\;\r\n\t{}[](),.|": {TokenType: TokenJSOperator, Separate: true},
-	}
-	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
-
-	jsRawMeaning := NewJSRawMeaning()
-
-	jsRawMeaning.SetSource(meaning)
-
-	jsPhraseMeaning := NewJSPhraseMeaning(jsRawMeaning)
-
-	return jsPhraseMeaning
+	return gotokenize.NewPatternMeaning(jsRawMeaning, JSPatterns, gotokenize.NoTokens, JSGlobalNested)
 }
 
-func CreateJSMeaning() *gotokenize.PatternMeaning {
+func NewDefaultJSInstructionMeaning() *JSInstructionMeaning {
 
-	tokenMap := map[string]gotokenize.RawTokenDefine{
+	jsPatternMeaning := NewDefaultJSMeaning()
 
-		"#%^&*-+/!<>=?:@\"'` \\;\r\n\t{}[](),.|": {TokenType: TokenJSOperator, Separate: true},
-	}
-	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
-
-	jsRawMeaning := NewJSRawMeaning()
-
-	jsRawMeaning.SetSource(meaning)
-
-	jsPhraseMeaning := NewJSPhraseMeaning(jsRawMeaning)
-
-	return gotokenize.CreatePatternMeaning(jsPhraseMeaning, JSPatterns, gotokenize.NoTokens, JSGlobalNested)
+	return NewJSInstructionMeaning(jsPatternMeaning)
 }

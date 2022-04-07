@@ -22,6 +22,9 @@ func NewAbtractMeaning(base IMeaning) *AbstractMeaning {
 	}
 }
 
+//AbstractMeaning this struct actions like a two-side middle layer between the owner struct and the real base struct
+//incase BaseMeaning is nil, the struct actions like base struct for owner struct
+//incase BaseMeaning is not nil, the struct actions like the wrapper for the base meaning struct.
 type AbstractMeaning struct {
 	BaseMeaning IMeaning
 }
@@ -97,6 +100,7 @@ func (meaning *AbstractMeaning) Clone() IMeaning {
 func (meaning *AbstractMeaning) Propagate(fn func(meaning IMeaning)) {
 
 	fn(meaning)
+
 	if meaning.BaseMeaning != nil {
 
 		meaning.BaseMeaning.Propagate(fn)

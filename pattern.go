@@ -10,6 +10,8 @@ type PatternToken struct {
 	IsIgnoreInResult bool
 	CanNested        bool
 	ExportType       int
+	IsAny            bool //if true match any next token
+	NumNextMoreAny   int  // if > 0 && isAny = true, check if there is next NumNextMoreAny + 1 tokens
 }
 
 //Pattern define a pattern is a array of token type

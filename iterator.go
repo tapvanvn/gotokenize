@@ -247,7 +247,7 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 
 				moveIter = 1
 
-			} else if patternToken.Type > -1 {
+			} else if patternToken.Type > 0 {
 
 				var currToken = iterator.GetBy(iter)
 
@@ -270,6 +270,22 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 
 				moveIter = 1
 
+			} else if patternToken.IsAny {
+
+				var currToken = iterator.GetBy(iter)
+				if currToken == nil {
+					match = false
+				}
+
+				if patternToken.NumNextMoreAny > 0 {
+					for n := 1; n <= patternToken.NumNextMoreAny; n++ {
+						testToken := iterator.GetBy(iter + n)
+						if testToken == nil {
+							match = false
+						}
+					}
+				}
+				moveIter = 1 + patternToken.NumNextMoreAny
 			}
 			if !match {
 

@@ -77,7 +77,7 @@ func TestPatternMeaning(t *testing.T) {
 
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
-	patternMeaning := gotokenize.CreatePatternMeaning(meaning, patterns, []int{2}, gotokenize.NoTokens)
+	patternMeaning := gotokenize.NewPatternMeaning(meaning, patterns, []int{2}, gotokenize.NoTokens)
 
 	proc := gotokenize.NewMeaningProcessFromStream(&stream)
 
@@ -207,47 +207,20 @@ func TestCSSMeaning(t *testing.T) {
 func TestJSRawMeaning(t *testing.T) {
 	content := `
 
-	function  {
-		()=>{bef}
-		a = c
-	}`
+	var spine = (()=>{
+		var __defProp = Object.defineProperty;
+		var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
+		var __export = (target, all) => {
+		  __markAsModule(target);
+		  for (var name in all)
+			__defProp(target, name, { get: all[name], enumerable: true });
+		};
+		})()`
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 
-	meaning := js.CreateJSRawMeaning()
-
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
-
-	meaning.Prepare(proc)
-
-	token := meaning.Next(proc)
-
-	for {
-		if token == nil {
-			break
-		}
-		token.Debug(0, js.JSTokenName)
-		token = meaning.Next(proc)
-	}
-	gotokenize.DebugMeaning(meaning)
-}
-
-func TestJSPhraseMeaning(t *testing.T) {
-	content := `
-
-	function def() {
-		()=>{bef}
-		a = c
-		for(var a = 0; a< 10; a++) {
-			b()
-		}
-	}`
-
-	stream := gotokenize.CreateStream(0)
-	stream.Tokenize(content)
-
-	meaning := js.CreateJSPhraseMeaning()
+	meaning := js.NewDefaultJSRawMeaning()
 
 	proc := gotokenize.NewMeaningProcessFromStream(&stream)
 
@@ -267,31 +240,47 @@ func TestJSPhraseMeaning(t *testing.T) {
 
 func TestJSMeaning(t *testing.T) {
 	content := `
-
-	var IntSet = class {
-		constructor() {
-		  this.array = new Array();
-		}
-		add(value) {
-		  let contains = this.contains(value);
-		  this.array[value | 0] = value | 0;
-		  return !contains;
-		}
-		contains(value) {
-		  return this.array[value | 0] != void 0;
-		}
-		remove(value) {
-		  this.array[value | 0] = void 0;
-		}
-		clear() {
-		  this.array.length = 0;
-		}
-	};`
+	var spine = (()=>{
+		var __defProp = Object.defineProperty;
+		var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
+		var __export = (target, all) => {
+		  __markAsModule(target);
+		  for (var name in all)
+			__defProp(target, name, { get: all[name], enumerable: true });
+		};
+		})()
+	`
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
 
-	meaning := js.CreateJSMeaning()
+	meaning := js.NewDefaultJSMeaning()
+
+	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+
+	meaning.Prepare(proc)
+
+	token := meaning.Next(proc)
+
+	for {
+		if token == nil {
+			break
+		}
+		token.Debug(0, js.JSTokenName)
+		token = meaning.Next(proc)
+	}
+	gotokenize.DebugMeaning(meaning)
+}
+
+func TestJSInstructionMeaning(t *testing.T) {
+	content := `
+	for (var name in all)
+		__defProp(target, name, { get: all[name], enumerable: true });`
+
+	stream := gotokenize.CreateStream(0)
+	stream.Tokenize(content)
+
+	meaning := js.NewDefaultJSInstructionMeaning()
 
 	proc := gotokenize.NewMeaningProcessFromStream(&stream)
 

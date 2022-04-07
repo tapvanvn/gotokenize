@@ -74,7 +74,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 			return tmpToken
 
-		} else if token.Content == "\"" || token.Content == "'" || token.Content == "`" {
+		} else if token.Type != TokenJSString && (token.Content == "\"" || token.Content == "'" || token.Content == "`") {
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSString, token.Content)
 
@@ -84,24 +84,29 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 		} else if token.Content == "=" {
 
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSAssign, "")
 			nextToken := iter.Get()
 
 			if nextToken != nil {
 
 				if nextToken.Content == ">" {
-					tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSRightArrow, "=>")
-
+					tmpToken.Content += ">"
+					tmpToken.Type = TokenJSRightArrow
 					_ = iter.Read()
 					return tmpToken
 
 				} else if nextToken.Content == "=" {
-					tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, "==")
-
+					tmpToken.Content += "="
 					_ = iter.Read()
+					tmpToken.Type = TokenJSBinaryOperator
+
+					if nextToken2 := iter.Get(); nextToken2 != nil && nextToken2.Content == "=" {
+						tmpToken.Content += "="
+						_ = iter.Read()
+					}
 					return tmpToken
 				}
 			}
-			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSAssign, "=")
 
 			return tmpToken
 
@@ -132,8 +137,10 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 					return tmpToken
 
 				} else {
+
 					if meaning.testRegex(iter) {
-						tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSRegex, "/")
+
+						tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSRegex, "")
 
 						tmpToken.Children.AddToken(gotokenize.Token{Type: TokenJSWord, Content: "/"})
 
@@ -141,6 +148,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 						return tmpToken
 					} else {
+
 						tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSOperator, "/")
 						return tmpToken
 					}
@@ -152,12 +160,13 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 		} else if token.Content == ";" || token.Content == "\n" || token.Content == "\r" {
 
-			token.Type = TokenJSPhraseBreak
-
-			return token
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhraseBreak, "")
+			meaning.continueMergePhraseBreak(iter, tmpToken)
+			return tmpToken
 
 		} else if token.Content == "!" { //!, !=, !==
 
+			token.Type = TokenJSUnaryOperator
 			nextToken := iter.Get()
 			if nextToken.Content == "=" {
 				token.Content += "="
@@ -167,8 +176,9 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 					token.Content += "="
 					_ = iter.Read()
 				}
+				token.Type = TokenJSBinaryOperator
 			}
-			token.Type = TokenJSBinaryOperator
+
 			return token
 
 		} else if token.Content == "&" { // &, &&
@@ -189,6 +199,63 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 			}
 			token.Type = TokenJSBinaryOperator
 			return token
+		} else if token.Content == "+" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, "+")
+			if nextToken := iter.Get(); nextToken != nil {
+				if nextToken.Content == "+" {
+					tmpToken.Content += "+"
+					tmpToken.Type = TokenJSUnaryOperator
+					_ = iter.Read()
+				}
+			}
+			return tmpToken
+		} else if token.Content == "-" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, "-")
+			if nextToken := iter.Get(); nextToken != nil {
+				if nextToken.Content == "-" {
+					tmpToken.Content += "-"
+					tmpToken.Type = TokenJSUnaryOperator
+					_ = iter.Read()
+				}
+			}
+			return tmpToken
+		} else if token.Content == "~" {
+			token.Type = TokenJSUnaryOperator
+			return token
+		} else if token.Content == "^" || token.Content == "%" || token.Content == "/" {
+			token.Type = TokenJSBinaryOperator
+			return token
+		} else if token.Content == "*" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, "*")
+			if nextToken := iter.Get(); nextToken != nil {
+				if nextToken.Content == "*" {
+					tmpToken.Content += "*"
+					_ = iter.Read()
+				}
+			}
+			return tmpToken
+		} else if token.Content == "case" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSCase, "")
+			for {
+				nextToken := iter.Read()
+				if nextToken == nil || nextToken.Content == ":" {
+					break
+				}
+				tmpToken.Children.AddToken(*nextToken)
+			}
+			return tmpToken
+		} else if token.Content == "default" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSDefault, "")
+			for {
+				nextToken := iter.Read()
+				if nextToken == nil || nextToken.Content == ":" {
+					break
+				}
+			}
+			return tmpToken
+		} else if token.Content == "break" {
+			token.Type = TokenJSBreak
+			token.Content = ""
 		}
 
 		if token.Type == 0 {
@@ -246,11 +313,12 @@ func (meaning *JSRawMeaning) continueReadString(iter *gotokenize.Iterator, curre
 	var lastSpecialToken *gotokenize.Token = nil
 
 	for {
-		if iter.EOS() {
-			break
-		}
+
 		token := iter.Read()
 
+		if token == nil {
+			return
+		}
 		if token.Content == "\\" {
 
 			specialCharacter = !specialCharacter
@@ -269,41 +337,57 @@ func (meaning *JSRawMeaning) continueReadString(iter *gotokenize.Iterator, curre
 			}
 		} else {
 
-			if specialCharacter && token.Content != "{" && token.Content != "}" && token.Content != "\"" && token.Content != "'" {
+			if specialCharacter {
 
 				currentToken.Children.AddToken(*lastSpecialToken)
 			}
 			specialCharacter = false
 			currentToken.Children.AddToken(*token)
 		}
-
 	}
 }
 
 //testRegex test if reach regex
 func (meaning *JSRawMeaning) testRegex(iter *gotokenize.Iterator) bool {
 
-	var i = iter.Offset + 1
+	var specialCharacter bool = false
+
+	var i = iter.Offset
 	for {
 		tmpToken := iter.GetAt(i)
 
 		if tmpToken == nil {
 			return false
 		}
+		tmpContent := tmpToken.GetContent()
 
-		if tmpToken.Content == "/" {
+		if tmpContent == "\\" {
 
-			testToken := iter.GetAt(i + 1)
-			if testToken.Content == "i" || testToken.Content == "m" || testToken.Content == "g" {
-				return true
+			specialCharacter = !specialCharacter
 
-			} else {
-				return false
-			}
+		} else if !specialCharacter && tmpContent == "/" {
+
+			return true
+
+		} else {
+
+			specialCharacter = false
 		}
+
 		i += 1
 	}
 	return false
+}
+
+func (meaing *JSRawMeaning) continueMergePhraseBreak(iter *gotokenize.Iterator, currToken *gotokenize.Token) {
+	for {
+		token := iter.Get()
+		if token == nil || !(token.Content == ";" || token.Content == "\r" || token.Content == "\n") {
+
+			break
+		}
+		iter.Read()
+	}
 }
 
 func (meaning *JSRawMeaning) continueReadRegex(iter *gotokenize.Iterator, currToken *gotokenize.Token) {
@@ -409,6 +493,7 @@ func (meaning *JSRawMeaning) continueReadBlockComment(iter *gotokenize.Iterator,
 		}
 	}
 }
+
 func (meaning *JSRawMeaning) GetName() string {
 
 	return "JSRawMeaning"

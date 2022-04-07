@@ -24,7 +24,7 @@ func CreateJSONMeaning() *gotokenize.PatternMeaning {
 
 	jsonRawMeaning := NewJSONRawMeaning(meaning)
 
-	return gotokenize.CreatePatternMeaning(jsonRawMeaning, JSONPatterns, gotokenize.NoTokens, JSONGlobalNested)
+	return gotokenize.NewPatternMeaning(jsonRawMeaning, JSONPatterns, gotokenize.NoTokens, JSONGlobalNested)
 }
 
 func (meaning *JSONRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
