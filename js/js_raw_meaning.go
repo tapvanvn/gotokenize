@@ -5,7 +5,9 @@ import (
 )
 
 func NewJSRawMeaning() *JSRawMeaning {
+
 	return &JSRawMeaning{
+
 		AbstractMeaning: gotokenize.NewAbtractMeaning(nil),
 	}
 }
@@ -82,9 +84,9 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 			return tmpToken
 
-		} else if token.Content == "=" {
+		} else if token.Content == "=" && token.Type != TokenJSAssign {
 
-			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSAssign, "")
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSAssign, "=")
 			nextToken := iter.Get()
 
 			if nextToken != nil {
@@ -256,6 +258,15 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 		} else if token.Content == "break" {
 			token.Type = TokenJSBreak
 			token.Content = ""
+		} else if token.Content == "." {
+			nextToken := iter.Get()
+			nextToken2 := iter.GetBy(1)
+			if nextToken != nil && nextToken2 != nil && nextToken.Content == "." && nextToken2.Content == "." {
+				token.Type = TokenJSTreeDotOperator
+				token.Content = "..."
+				iter.Read()
+				iter.Read()
+			}
 		}
 
 		if token.Type == 0 {

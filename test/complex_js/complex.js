@@ -1,23 +1,8 @@
 
-if (true) {
-
-}else if (false) {
-
-} else {
-
-}
-if (true ) do_some_thing()
-
-function func_1(){
-    function iner_func() {
-        switch (b) {
-            case ac:
-                var abc = "def"
-                break;
-            default:
-                break;
-        }
-    }
+if (true) {}else if (false) {} else {}
+if (true ) do_some_thing();function func_1(){
+  function iner_func() {
+    switch (b) { case ac: var abc = "def";break;default:break;}}
 }
 
 do {

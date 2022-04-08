@@ -12,17 +12,18 @@ const (
 	TokenJSOperator    = 2
 	TokenJSPhraseBreak = 3
 
-	TokenJSBracket        = 100 //()
-	TokenJSBlock          = 101 //{}
-	TokenJSBracketSquare  = 102 //[]
-	TokenJSUnaryOperator  = 103 // !, ~, ++, --
-	TokenJSBinaryOperator = 104 // <>+-*/%, <=, >=, <<, >>, >>>, ||, |, &&, &, ^, **, ==, ===, !=, !==
-	TokenJSAssign         = 105 // =
-	TokenJSRightArrow     = 106 // =>
-	TokenJSLineComment    = 107 // //
-	TokenJSBlockComment   = 108 // /**/
-	TokenJSPhrase         = 109
-	TokenJSRegex          = 110 // //img
+	TokenJSBracket         = 100 //()
+	TokenJSBlock           = 101 //{}
+	TokenJSBracketSquare   = 102 //[]
+	TokenJSUnaryOperator   = 103 // !, ~, ++, --
+	TokenJSBinaryOperator  = 104 // <>+-*/%, <=, >=, <<, >>, >>>, ||, |, &&, &, ^, **, ==, ===, !=, !==
+	TokenJSTreeDotOperator = 105
+	TokenJSAssign          = 106 // =
+	TokenJSRightArrow      = 107 // =>
+	TokenJSLineComment     = 108 // //
+	TokenJSBlockComment    = 109 // /**/
+	TokenJSPhrase          = 110
+	TokenJSRegex           = 111 // //img
 
 	TokenJSFunction       = 200
 	TokenJSFunctionLambda = 201
@@ -39,11 +40,14 @@ const (
 	TokenJSWhile          = 212
 	TokenJSDo             = 213
 	TokenJSClass          = 214
+	TokenJSClassFunction  = 215
+	TokenJSIfTrail        = 216
 
-	TokenJSArgumentList          = 300 //use in function declaration and function call
-	TokenJSStrongDeclareVariable = 301 //mark that the follow variable had been strong declared with `var` keyword
-	TokenJSStrongDeclareConstant = 302 //mark that the follow variable had been strong declared with `const` keyword
-	TokenJSStrongDeclareLet      = 303 //mark that the follow variable had been strong declared with `let` keyword
+	TokenJSStrongBreak           = 300 //sure `;`
+	TokenJSArgumentList          = 301 //use in function declaration and function call
+	TokenJSStrongDeclareVariable = 302 //mark that the follow variable had been strong declared with `var` keyword
+	TokenJSStrongDeclareConstant = 303 //mark that the follow variable had been strong declared with `const` keyword
+	TokenJSStrongDeclareLet      = 304 //mark that the follow variable had been strong declared with `let` keyword
 	TokenJSAssignVariable        = 350 //declare a new or assign value to variable
 	TokenJSDeclareFunction       = 351 //declare a new function (traditional or lambda)
 	TokenJSDeclareClass          = 352 //declare a class using class keyword
@@ -83,6 +87,9 @@ func JSTokenName(Type int) string {
 
 	case TokenJSBinaryOperator:
 		return "binary operator"
+
+	case TokenJSTreeDotOperator:
+		return "treedot operator"
 
 	case TokenJSAssign:
 		return "assign"
@@ -144,9 +151,15 @@ func JSTokenName(Type int) string {
 	case TokenJSClass:
 		return "class"
 
+	case TokenJSClassFunction:
+		return "class function"
+
 	case TokenJSRegex:
 		return "regex"
 
+	case TokenJSIfTrail:
+		return "iftrail"
+		//Instruction
 	case TokenJSArgumentList:
 		return "argument list"
 	case TokenJSStrongDeclareVariable:
@@ -211,6 +224,9 @@ var JSPhraseAllow = []int{
 	TokenJSBracket,
 	TokenJSBracketSquare,
 	TokenJSRightArrow,
+	TokenJSFunctionLambda,
+	TokenJSFunction,
+	TokenJSClass,
 }
 
 //JSPatterns Patterns to detech structure of js
@@ -223,7 +239,6 @@ var JSPatterns = []gotokenize.Pattern{
 		Struct: []gotokenize.PatternToken{
 			{Content: "if", IsIgnoreInResult: true},
 			{Type: TokenJSBracket, CanNested: true},
-			//{Type: TokenJSBlock, CanNested: true},
 		},
 	},
 
@@ -264,6 +279,22 @@ var JSPatterns = []gotokenize.Pattern{
 			{Type: TokenJSBlock, CanNested: true},
 		},
 	},
+	//pattern do block
+	{
+		Type:                 TokenJSDo,
+		IsRemoveGlobalIgnore: true,
+		Struct: []gotokenize.PatternToken{
+			{Content: "do", IsIgnoreInResult: true},
+		},
+	},
+	//pattern while block
+	{
+		Type:                 TokenJSWhile,
+		IsRemoveGlobalIgnore: true,
+		Struct: []gotokenize.PatternToken{
+			{Content: "while", IsIgnoreInResult: true},
+		},
+	},
 	//pattern function with keyword and name
 	{
 		Type:                 TokenJSFunction,
@@ -288,7 +319,7 @@ var JSPatterns = []gotokenize.Pattern{
 
 	//pattern function without keyword : using to detech class's function
 	{
-		Type:                 TokenJSFunction,
+		Type:                 TokenJSClassFunction,
 		IsRemoveGlobalIgnore: true,
 		Struct: []gotokenize.PatternToken{
 			{Type: TokenJSWord},
@@ -304,7 +335,6 @@ var JSPatterns = []gotokenize.Pattern{
 		Struct: []gotokenize.PatternToken{
 			{Type: TokenJSBracket, CanNested: true},
 			{Type: TokenJSRightArrow, IsIgnoreInResult: true},
-			{Type: TokenJSBlock, CanNested: true},
 		},
 	},
 
@@ -315,41 +345,8 @@ var JSPatterns = []gotokenize.Pattern{
 		Struct: []gotokenize.PatternToken{
 			{Type: TokenJSBracket, CanNested: true},
 			{Type: TokenJSRightArrow, IsIgnoreInResult: true},
-			{Type: TokenJSWord},
 		},
 	},
-
-	//pattern while block
-	{
-		Type:                 TokenJSWhile,
-		IsRemoveGlobalIgnore: true,
-		Struct: []gotokenize.PatternToken{
-			{Content: "while", IsIgnoreInResult: true},
-			//{Type: TokenJSBracket, CanNested: true},
-			//{Type: TokenJSBlock, CanNested: true},
-		},
-	},
-	/*
-		//pattern while phrase
-		{
-			Type:                 TokenJSWhile,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "while", IsIgnoreInResult: true},
-				{Type: TokenJSBracket},
-				{Type: TokenJSPhrase},
-			},
-		},
-	*/
-	//pattern do block
-	{
-		Type:                 TokenJSDo,
-		IsRemoveGlobalIgnore: true,
-		Struct: []gotokenize.PatternToken{
-			{Content: "do", IsIgnoreInResult: true},
-		},
-	},
-
 	//class without name
 	{
 		Type:                 TokenJSClass,
@@ -415,4 +412,10 @@ var JSInstructionGlobalNested = append(
 	TokenJSAssignVariable,
 	TokenJSFunction,
 	TokenJSFunctionLambda,
+	TokenJSClassFunction,
+	TokenJSSwitch,
 )
+
+var JSStrongBreakEquivalent = []int{
+	TokenJSBlock,
+}

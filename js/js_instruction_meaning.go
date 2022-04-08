@@ -1,13 +1,29 @@
 package js
 
 import (
+	"fmt"
+
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
-func NewJSInstructionMeaning(baseMeaning gotokenize.IMeaning) *JSInstructionMeaning {
+var optimizePhraseTokens []int = []int{
+	TokenJSPhrase,
+	TokenJSClass,
+	TokenJSFunction,
+	TokenJSFunctionLambda,
+	TokenJSClassFunction,
+	TokenJSBracket,
+	TokenJSBracketSquare,
+	TokenJSSwitch,
+	TokenJSFor,
+	TokenJSDo,
+	TokenJSWhile,
+	TokenJSIfTrail,
+	TokenJSBlock,
+	TokenJSAssignVariable,
+}
 
-	//abtract := gotokenize.NewAbtractMeaning(baseMeaning)
-	//patternMeaning := gotokenize.NewPatternMeaning(abtract, JSInstructionPatterns, gotokenize.NoTokens, JSInstructionGlobalNested)
+func NewJSInstructionMeaning(baseMeaning gotokenize.IMeaning) *JSInstructionMeaning {
 
 	return &JSInstructionMeaning{
 		AbstractMeaning: gotokenize.NewAbtractMeaning(baseMeaning),
@@ -21,6 +37,22 @@ type JSInstructionMeaning struct {
 func (meaning *JSInstructionMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
 	token := meaning.getNextMeaningToken(process.Iter)
+	if token != nil {
+		if token.Type == TokenJSClassFunction {
+			fmt.Println("process token clas function")
+			iter := token.Children.Iterator()
+			iter.Seek(1)
+			meaning.processIter(iter)
+		} else if token.Type != TokenJSPhrase {
+
+			meaning.processChild(token)
+		} else if token.Children.Length() == 1 {
+
+			if firstToken := token.Children.GetTokenAt(0); gotokenize.IsContainToken(optimizePhraseTokens, firstToken.Type) {
+				return firstToken
+			}
+		}
+	}
 	return token
 }
 
@@ -43,17 +75,42 @@ func (meaning *JSInstructionMeaning) getNextMeaningToken(iter *gotokenize.Iterat
 		} else if token.Type == TokenJSWhile {
 
 			meaning.continueWhite(iter, token)
-		}
 
+		} else if token.Type == TokenJSFunctionLambda {
+
+			meaning.continueLambda(iter, token)
+
+		} else if token.Type == TokenJSAssign {
+
+			meaning.continueAssignValue(iter, token)
+
+		} else if token.Type == TokenJSBlock {
+
+			meaning.processBlock(token)
+
+		} else if token.Type != TokenJSPhraseBreak && !gotokenize.IsContainToken(optimizePhraseTokens, token.Type) /*token.Type != TokenJSPhrase*/ {
+
+			fmt.Println("begin phrase", JSTokenName(token.Type))
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
+			meaning.processChild(token)
+			tmpToken.Children.AddToken(*token)
+			meaning.continuePhrase(iter, tmpToken)
+			return tmpToken
+
+		} else if token.Type == TokenJSPhraseBreak {
+
+			return meaning.getNextMeaningToken(iter)
+		}
 		return token
 	}
 
 	return nil
 }
+
 func (meaning *JSInstructionMeaning) continuePassPhraseBreak(iter *gotokenize.Iterator) {
 	for {
 		token := iter.Get()
-		if token.Type != TokenJSPhraseBreak {
+		if token == nil || token.Type != TokenJSPhraseBreak {
 			break
 		}
 		_ = iter.Read()
@@ -61,22 +118,69 @@ func (meaning *JSInstructionMeaning) continuePassPhraseBreak(iter *gotokenize.It
 }
 
 func (meaning *JSInstructionMeaning) continuePhrase(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
+
 	for {
 		token := iter.Get()
+
 		if token == nil || token.Type == TokenJSPhraseBreak || !gotokenize.IsContainToken(JSPhraseAllow, token.Type) {
+
 			break
 		}
+		//fmt.Println("in phrase", token.Type)
 		_ = iter.Read()
+		if token.Type == TokenJSFunctionLambda {
+
+			meaning.continueLambda(iter, token)
+		}
+		meaning.processChild(token)
 		currentToken.Children.AddToken(*token)
+	}
+
+	if currentToken.Children.Length() == 1 {
+
+		if firstToken := currentToken.Children.GetTokenAt(0); gotokenize.IsContainToken(optimizePhraseTokens, firstToken.Type) {
+			currentToken.Type = firstToken.Type
+			currentToken.Content = firstToken.Content
+			currentToken.Children = firstToken.Children
+		}
 	}
 }
 
 func (meaning *JSInstructionMeaning) continueFor(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
+
 	meaning.continuePassPhraseBreak(iter)
-	nextToken := iter.Read()
-	if nextToken != nil {
-		currentToken.Children.AddToken(*nextToken)
+	phraseToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
+	meaning.continuePhrase(iter, phraseToken)
+	currentToken.Children.AddToken(*phraseToken)
+}
+func (meaning *JSInstructionMeaning) processIter(iter *gotokenize.Iterator) {
+	for {
+		token := iter.Read()
+		if token == nil {
+			break
+		}
+		meaning.processChild(token)
 	}
+}
+
+func (meaning *JSInstructionMeaning) processChild(parentToken *gotokenize.Token) {
+
+	if !gotokenize.IsContainToken(JSInstructionGlobalNested, parentToken.Type) {
+		return
+	}
+	proc := gotokenize.NewMeaningProcessFromStream(&parentToken.Children)
+
+	//meaning.Prepare(proc)
+	newStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
+
+	for {
+		token := meaning.Next(proc)
+		if token == nil {
+			break
+		}
+		newStream.AddToken(*token)
+	}
+	parentToken.Children = newStream
 }
 
 func (meaning *JSInstructionMeaning) continueIfTrail(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
@@ -85,6 +189,7 @@ func (meaning *JSInstructionMeaning) continueIfTrail(iter *gotokenize.Iterator, 
 	ifBodyPhrase := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
 	meaning.continuePhrase(iter, ifBodyPhrase)
 	currentToken.Children.AddToken(*ifBodyPhrase)
+	currentToken.Type = TokenJSIfTrail
 
 	for {
 		testElseIf := iter.Get()
@@ -113,6 +218,7 @@ func (meaning *JSInstructionMeaning) continueDo(iter *gotokenize.Iterator, curre
 
 	meaning.continuePassPhraseBreak(iter)
 	if nextToken := iter.Read(); nextToken != nil {
+		meaning.processChild(nextToken)
 		currentToken.Children.AddToken(*nextToken)
 		meaning.continuePassPhraseBreak(iter)
 		testWhileToken := iter.Get()
@@ -120,64 +226,60 @@ func (meaning *JSInstructionMeaning) continueDo(iter *gotokenize.Iterator, curre
 			iter.Read()
 			meaning.continuePassPhraseBreak(iter)
 			if testWhileBodyToken := iter.Read(); testWhileBodyToken != nil && testWhileBodyToken.Type == TokenJSBracket {
+				meaning.processChild(testWhileBodyToken)
 				testWhileToken.Children.AddToken(*testWhileBodyToken)
 			}
 			currentToken.Children.AddToken(*testWhileToken)
 		}
 		//else error
 	}
-
 }
 
 func (meaning *JSInstructionMeaning) continueWhite(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
 
 	meaning.continuePassPhraseBreak(iter)
 	if nextToken := iter.Read(); nextToken != nil && nextToken.Type == TokenJSBracket {
+		meaning.processChild(nextToken)
 		currentToken.Children.AddToken(*nextToken)
 		meaning.continuePassPhraseBreak(iter)
 		if bodyToken := iter.Read(); bodyToken != nil {
+			meaning.processChild(bodyToken)
 			currentToken.Children.AddToken(*bodyToken)
 		}
 	}
 	//else error
 }
 
-func (meaning *JSInstructionMeaning) processPhrase(currentToken *gotokenize.Token) {
+func (meaning *JSInstructionMeaning) continueLambda(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
 
-	/*process := gotokenize.NewMeaningProcessFromStream(&currentToken.Children)
-	newStream := gotokenize.CreateStream(0)
+	meaning.continuePassPhraseBreak(iter)
+	phraseToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
+	meaning.continuePhrase(iter, phraseToken)
+	currentToken.Children.AddToken(*phraseToken)
 
+}
+
+func (meaning *JSInstructionMeaning) continueAssignValue(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
+	meaning.continuePassPhraseBreak(iter)
+	currentToken.Type = TokenJSAssignVariable
+	phraseToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
+	meaning.continuePhrase(iter, phraseToken)
+	currentToken.Children.AddToken(*phraseToken)
+}
+
+func (meaning *JSInstructionMeaning) processBlock(currentToken *gotokenize.Token) {
+
+	newStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
+	iter := currentToken.Children.Iterator()
+	meaning.continuePassPhraseBreak(iter)
 	for {
-		token := meaning.patternMeaning.Next(process)
-
+		token := iter.Read()
 		if token == nil {
-
 			break
-		}
-		if token.Type == TokenJSAssign {
-			fmt.Println("found assign")
-			fmt.Println(meaning.patternMeaning.Patterns)
-		}
-		if gotokenize.IsContainToken(JSInstructionGlobalNested, token.Type) {
-
-			chilProc := gotokenize.NewMeaningProcessFromStream(&token.Children)
-			chilStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
-
-			for {
-				childToken := meaning.Next(chilProc)
-
-				if childToken == nil {
-
-					break
-				}
-
-				chilStream.AddToken(*childToken)
-			}
-			token.Children = chilStream
 		}
 		newStream.AddToken(*token)
 	}
-	currentToken.Children = newStream*/
+	currentToken.Children = newStream
 }
 
 func (meaning *JSInstructionMeaning) GetName() string {
