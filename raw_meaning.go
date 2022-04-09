@@ -107,13 +107,14 @@ func (meaning *RawMeaning) Prepare(proc *MeaningProcess) {
 		})
 	}
 	//fmt.Printf("after raw prepare:%d\n", newStream.Length())
-	proc.SetStream(&newStream)
+	proc.SetStream(proc.ParentTokens, &newStream)
 }
 
 func (meaning *RawMeaning) Clone() IMeaning {
 
 	return CreateRawMeaning(meaning.tokenMap, meaning.separate)
 }
+
 func (meaning *RawMeaning) GetName() string {
 	return "RawMeaning"
 }

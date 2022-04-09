@@ -1,6 +1,9 @@
 package js
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
@@ -22,7 +25,7 @@ func (meaning *JSRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokeniz
 
 	if token != nil && token.Children.Length() > 0 && gotokenize.IsContainToken(JSGlobalNested, token.Type) {
 
-		childProcess := gotokenize.NewMeaningProcessFromStream(&token.Children)
+		childProcess := gotokenize.NewMeaningProcessFromStream(append(process.ParentTokens, token.Type), &token.Children)
 
 		subStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
 
@@ -151,11 +154,12 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 						return tmpToken
 					} else {
 
-						tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSOperator, "/")
+						tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, "/")
 						return tmpToken
 					}
 				}
 			}
+
 		} else if token.Content == " " || token.Content == "\t" {
 
 			return meaning.getNextMeaningToken(iter)
@@ -224,7 +228,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 		} else if token.Content == "~" {
 			token.Type = TokenJSUnaryOperator
 			return token
-		} else if token.Content == "^" || token.Content == "%" || token.Content == "/" {
+		} else if token.Content == "^" || token.Content == "%" || token.Content == "/" || token.Content == ":" {
 			token.Type = TokenJSBinaryOperator
 			return token
 		} else if token.Content == "*" {
@@ -259,6 +263,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 			token.Type = TokenJSBreak
 			token.Content = ""
 		} else if token.Content == "." {
+			//token.Type = TokenJSBinaryOperator
 			nextToken := iter.Get()
 			nextToken2 := iter.GetBy(1)
 			if nextToken != nil && nextToken2 != nil && nextToken.Content == "." && nextToken2.Content == "." {
@@ -267,6 +272,12 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 				iter.Read()
 				iter.Read()
 			}
+		} else if token.Content == "?" {
+			token.Type = TokenJSQuestionOperator
+		} else if token.Content == "," {
+			token.Type = TokenJSSoftBreak
+		} else if (token.Type == TokenJSWord || token.Type == 0) && strings.Index(JSKeyWords, fmt.Sprintf(",%s,", token.Content)) > 0 {
+			token.Type = TokenJSKeyWord
 		}
 
 		if token.Type == 0 {
@@ -367,7 +378,8 @@ func (meaning *JSRawMeaning) testRegex(iter *gotokenize.Iterator) bool {
 	for {
 		tmpToken := iter.GetAt(i)
 
-		if tmpToken == nil {
+		if tmpToken == nil || tmpToken.Type == TokenJSPhraseBreak || tmpToken.Content == "\n" || tmpToken.Content == "\r" {
+
 			return false
 		}
 		tmpContent := tmpToken.GetContent()

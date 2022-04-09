@@ -58,7 +58,9 @@ func (stringifier *Stringifier) put(content string, stroke *TokenStroke) {
 }
 
 func (stringifier *Stringifier) PutToken(token *gotokenize.Token) {
-
+	if token == nil {
+		return
+	}
 	if token.Type == TokenJSIfTrail {
 
 		stringifier.PutIfTrail(token)
@@ -106,6 +108,9 @@ func (stringifier *Stringifier) PutToken(token *gotokenize.Token) {
 	} else if token.Type == TokenJSRegex {
 
 		stringifier.PutRegex(token)
+	} else if token.Content == "," {
+
+		stringifier.put(",", &BreakAfterStroke)
 
 	} else {
 

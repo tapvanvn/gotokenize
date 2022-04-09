@@ -7,6 +7,7 @@ import (
 
 const (
 	TokenUnknown = iota
+	TokenNoType  = -1
 )
 
 func NewToken(atLevel int, tokenType int, content string) *Token {
@@ -24,6 +25,11 @@ type Token struct {
 	Content  string
 	Children TokenStream
 }
+type DebugOption struct {
+	StringifyTokens []int
+}
+
+var EmptyDebugOption = &DebugOption{}
 
 func (token *Token) GetType() int {
 	return token.Type
@@ -51,9 +57,20 @@ func IndexOf(runes []rune, ch rune) int {
 	}
 	return -1
 }
-func (token *Token) Debug(level int, fnName func(int) string) {
+func (token *Token) Debug(level int, fnName func(int) string, options *DebugOption) {
 
-	trimContent := strings.TrimSpace(token.Content)
+	printContent := ""
+	printChildren := true
+	if options != nil && IsContainToken(options.StringifyTokens, token.Type) {
+		printContent = strings.TrimSpace(token.Children.ConcatStringContent())
+		printChildren = false
+	} else {
+		printContent = strings.TrimSpace(token.Content)
+	}
+	if len(printContent) > 20 {
+
+		printContent = string(printContent[0:20]) + "..."
+	}
 
 	for i := 0; i <= level; i++ {
 
@@ -69,15 +86,17 @@ func (token *Token) Debug(level int, fnName func(int) string) {
 
 	if fnName != nil {
 
-		fmt.Printf("%s", ColorContent(trimContent))
+		fmt.Printf("%s", ColorContent(printContent))
 
 		fmt.Printf("-%s\n", ColorName(fnName(token.Type)))
 
 	} else {
 
-		fmt.Println(trimContent)
+		fmt.Println(printContent)
 
 	}
-
-	token.Children.Debug(level+1, fnName)
+	if !printChildren {
+		return
+	}
+	token.Children.Debug(level+1, fnName, options)
 }

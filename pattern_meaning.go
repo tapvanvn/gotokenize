@@ -7,6 +7,12 @@ type PatternMeaning struct {
 	TokenCanNested []int
 }
 
+type PatternMeaningDefine struct {
+	Patterns       []Pattern
+	IgnoreTokens   []int
+	TokenCanNested []int
+}
+
 func NewPatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []int, tokenCanNested []int) *PatternMeaning {
 
 	pattern := &PatternMeaning{
@@ -22,14 +28,12 @@ func NewPatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []int, 
 
 func (meaning *PatternMeaning) Next(process *MeaningProcess) *Token {
 
-	token := meaning.getNextMeaningToken(process.Iter)
+	token := meaning.getNextMeaningToken(process.Iter, process.ParentTokens, process.PassedTokenType)
 	if token != nil {
 
 		if IsContainToken(meaning.TokenCanNested, token.Type) {
 
-			childProcess := NewMeaningProcessFromStream(&token.Children)
-			//TODO: fixbug Prepare
-			//childMeaning.Prepare(childProcess)
+			childProcess := NewMeaningProcessFromStream(append(process.ParentTokens, token.Type), &token.Children)
 
 			subStream := CreateStream(meaning.GetMeaningLevel())
 
@@ -44,18 +48,22 @@ func (meaning *PatternMeaning) Next(process *MeaningProcess) *Token {
 			}
 			token.Children = subStream
 		}
+		process.PassedTokenType = token.Type
+	} else {
+		process.PassedTokenType = TokenNoType
 	}
+
 	return token
 }
 
-func (meaning *PatternMeaning) getNextMeaningToken(iter *Iterator) *Token {
+func (meaning *PatternMeaning) getNextMeaningToken(iter *Iterator, parentTokens []int, lastToken int) *Token {
 	for {
 
 		if iter.EOS() {
 			break
 		}
 
-		marks := iter.FindPattern(meaning.Patterns, true, meaning.IgnoreTokens)
+		marks := iter.FindPattern(meaning.Patterns, true, meaning.IgnoreTokens, parentTokens, lastToken)
 
 		if len(marks) > 0 {
 
@@ -76,9 +84,7 @@ func (meaning *PatternMeaning) getNextMeaningToken(iter *Iterator) *Token {
 
 				if childToken != nil && childMark.CanNested {
 
-					childProcess := NewMeaningProcessFromStream(&childToken.Children)
-
-					meaning.Prepare(childProcess)
+					childProcess := NewMeaningProcessFromStream(append(parentTokens, childToken.Type), &childToken.Children)
 
 					subStream := CreateStream(meaning.GetMeaningLevel())
 

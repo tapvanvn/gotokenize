@@ -38,7 +38,7 @@ func TestRawMeaning(t *testing.T) {
 	}
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 	meaning := gotokenize.CreateRawMeaning(tokenMap, true)
 	meaning.Prepare(proc)
 	for {
@@ -79,7 +79,7 @@ func TestPatternMeaning(t *testing.T) {
 
 	patternMeaning := gotokenize.NewPatternMeaning(meaning, patterns, []int{2}, gotokenize.NoTokens)
 
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 
 	patternMeaning.Prepare(proc)
 
@@ -88,7 +88,7 @@ func TestPatternMeaning(t *testing.T) {
 		if token == nil {
 			break
 		}
-		token.Debug(0, nil)
+		token.Debug(0, nil, nil)
 
 		if token.Type != 100 {
 			t.Fail()
@@ -106,7 +106,7 @@ func TestJSONMeaning(t *testing.T) {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 	meaning := json.CreateJSONMeaning()
 	meaning.Prepare(proc)
 
@@ -115,7 +115,7 @@ func TestJSONMeaning(t *testing.T) {
 		if token == nil {
 			break
 		}
-		token.Children.Debug(0, json.JSONNaming)
+		token.Children.Debug(0, json.JSONNaming, gotokenize.EmptyDebugOption)
 	}
 }
 
@@ -131,7 +131,7 @@ func TestXMLRawMeaning(t *testing.T) {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 	meaning := xml.NewXMLHighMeaning()
 	meaning.Prepare(proc)
 
@@ -141,7 +141,7 @@ func TestXMLRawMeaning(t *testing.T) {
 			break
 		}
 
-		token.Children.Debug(0, xml.XMLNaming)
+		token.Children.Debug(0, xml.XMLNaming, gotokenize.EmptyDebugOption)
 
 	}
 }
@@ -159,7 +159,7 @@ func TestXMLMeaning(t *testing.T) {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 	meaning := xml.NewXMLHighMeaning()
 	meaning.Prepare(proc)
 
@@ -169,7 +169,7 @@ func TestXMLMeaning(t *testing.T) {
 			break
 		}
 
-		token.Children.Debug(0, xml.XMLNaming)
+		token.Children.Debug(0, xml.XMLNaming, gotokenize.EmptyDebugOption)
 	}
 }
 
@@ -192,7 +192,7 @@ func TestCSSMeaning(t *testing.T) {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(content)
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 	meaning := css.CreateCSSMeaning()
 	meaning.Prepare(proc)
 
@@ -201,7 +201,7 @@ func TestCSSMeaning(t *testing.T) {
 		if token == nil {
 			break
 		}
-		token.Children.Debug(0, css.CSSNaming)
+		token.Children.Debug(0, css.CSSNaming, gotokenize.EmptyDebugOption)
 	}
 }
 func TestJSRawMeaning(t *testing.T) {
@@ -222,7 +222,7 @@ func TestJSRawMeaning(t *testing.T) {
 
 	meaning := js.NewDefaultJSRawMeaning()
 
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 
 	meaning.Prepare(proc)
 
@@ -232,7 +232,7 @@ func TestJSRawMeaning(t *testing.T) {
 		if token == nil {
 			break
 		}
-		token.Debug(0, js.JSTokenName)
+		token.Debug(0, js.JSTokenName, js.JSDebugOptions)
 		token = meaning.Next(proc)
 	}
 	gotokenize.DebugMeaning(meaning)
@@ -256,7 +256,7 @@ func TestJSMeaning(t *testing.T) {
 
 	meaning := js.NewDefaultJSMeaning()
 
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 
 	meaning.Prepare(proc)
 
@@ -266,7 +266,7 @@ func TestJSMeaning(t *testing.T) {
 		if token == nil {
 			break
 		}
-		token.Debug(0, js.JSTokenName)
+		token.Debug(0, js.JSTokenName, js.JSDebugOptions)
 		token = meaning.Next(proc)
 	}
 	gotokenize.DebugMeaning(meaning)
@@ -282,7 +282,7 @@ func TestJSInstructionMeaning(t *testing.T) {
 
 	meaning := js.NewDefaultJSInstructionMeaning()
 
-	proc := gotokenize.NewMeaningProcessFromStream(&stream)
+	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 
 	meaning.Prepare(proc)
 
@@ -292,7 +292,7 @@ func TestJSInstructionMeaning(t *testing.T) {
 		if token == nil {
 			break
 		}
-		token.Debug(0, js.JSTokenName)
+		token.Debug(0, js.JSTokenName, js.JSDebugOptions)
 		token = meaning.Next(proc)
 	}
 	gotokenize.DebugMeaning(meaning)

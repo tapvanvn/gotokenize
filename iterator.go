@@ -116,8 +116,20 @@ func IsContainToken(tokens []int, tokenType int) bool {
 	return false
 }
 
+func IsContainOneOfTokens(tokens []int, tokenTypes []int) bool {
+	for _, i := range tokens {
+		for _, j := range tokenTypes {
+			if i == j {
+				return true
+			}
+		}
+
+	}
+	return false
+}
+
 //FindPattern search pattern
-func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ignoreTokens []int) []Mark {
+func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ignoreTokens []int, parentTokens []int, lastToken int) []Mark {
 
 	marks := []Mark{}
 
@@ -143,6 +155,14 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 
 		var childMark *Mark = nil
 
+		if len(pattern.LivingContext) > 0 && !IsContainOneOfTokens(pattern.LivingContext, parentTokens) {
+
+			continue
+		}
+		if pattern.RequireLastToken > 0 && pattern.RequireLastToken != lastToken {
+
+			continue
+		}
 		for {
 			if iterToken >= patternTokenNum {
 
@@ -199,6 +219,7 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 
 				continue
 			}
+
 			//If current pattern need find to until
 			if patternToken.IsPhraseUntil {
 
@@ -287,6 +308,20 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 				}
 				moveIter = 1 + patternToken.NumNextMoreAny
 			}
+			//if need to find
+			if match && len(patternToken.Nested) > 0 {
+
+				var currToken = iterator.GetBy(iter)
+				if currToken == nil {
+					match = false
+				} else {
+					childIter := currToken.Children.Iterator()
+					childMarks := childIter.FindPatternToken(0, &patternToken.Nested, ignoreTokens)
+					if len(childMarks) == 0 {
+						match = false
+					}
+				}
+			}
 			if !match {
 
 				break
@@ -297,8 +332,183 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 			childMark.End = iterator.Offset + iter
 
 			iterToken++
-			//log.Append(fmt.Sprintf("\n"))
 		}
+	}
+	return marks
+}
+
+func (iterator *Iterator) FindPatternToken(patternType int, patternTokens *[]PatternToken, ignoreTokens []int) []Mark {
+
+	marks := []Mark{}
+
+	iter := 0
+
+	iterToken := 0
+
+	traceIterToken := -1
+
+	patternTokenNum := len(*patternTokens)
+
+	ignores := []int{}
+
+	children := []*Mark{}
+
+	var patternToken PatternToken
+
+	var childMark *Mark = nil
+
+	for {
+		if iterToken >= patternTokenNum {
+
+			mark := Mark{Type: patternType, Begin: iterator.Offset, End: iterator.Offset + iter, Ignores: ignores, Children: children}
+
+			marks = append(marks, mark)
+
+			return marks
+
+		}
+		if iterToken > traceIterToken {
+
+			traceIterToken = iterToken
+
+			patternToken = (*patternTokens)[iterToken]
+
+			childMark = &Mark{
+				Type:             patternToken.Type,
+				CanNested:        patternToken.CanNested,
+				IsIgnoreInResult: patternToken.IsIgnoreInResult,
+				IsTokenStream:    patternToken.IsPhraseUntil,
+			}
+			if patternToken.ExportType > 0 {
+
+				childMark.Type = patternToken.ExportType
+			}
+
+			children = append(children, childMark)
+
+			childMark.Begin = iterator.Offset + iter
+
+			//log.Append(fmt.Sprintf("\n\t[%s %s] %s %t", ColorType(patternToken.Type), ColorName(strconv.Itoa(patternToken.Type)), ColorContent(patternToken.Content), patternToken.IsPhraseUntil))
+		}
+		var match bool = true
+
+		var moveIter int = 0
+
+		nextToken := iterator.GetBy(iter)
+
+		if nextToken == nil {
+			break
+		}
+
+		if IsContainToken(ignoreTokens, nextToken.Type) {
+
+			if patternToken.IsIgnoreInResult {
+
+				ignores = append(ignores, iterator.Offset+iter)
+			}
+			iter++
+
+			continue
+		}
+
+		//If current pattern need find to until
+		if patternToken.IsPhraseUntil {
+
+			for {
+				var currToken = iterator.GetBy(iter + moveIter)
+
+				if currToken == nil {
+
+					match = false
+
+					break
+				}
+				if (patternToken.Type > -1 && currToken.Type == patternToken.Type) || (len(patternToken.Content) > 0 && currToken.Content == patternToken.Content) {
+
+					if patternToken.IsIgnoreInResult {
+
+						ignores = append(ignores, iterator.Offset+iter+moveIter)
+					}
+					moveIter++
+					break
+				} else if IsContainToken(ignoreTokens, currToken.Type) {
+
+					ignores = append(ignores, iterator.Offset+iter+moveIter)
+
+				}
+
+				moveIter++
+			}
+		} else if patternToken.Content != "" {
+
+			var currToken = iterator.GetBy(iter)
+
+			if currToken == nil || currToken.Content != patternToken.Content {
+
+				match = false
+
+				//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
+			}
+
+			if patternToken.IsIgnoreInResult {
+
+				ignores = append(ignores, iterator.Offset+iter+moveIter)
+			}
+
+			childMark.Begin = iterator.Offset + iter
+
+			moveIter = 1
+
+		} else if patternToken.Type > 0 {
+
+			var currToken = iterator.GetBy(iter)
+
+			if currToken == nil || (currToken.Type != patternToken.Type) {
+
+				match = false
+
+				//log.Append(fmt.Sprintf("=>[%s %s %s]", ColorFail(), ColorType(currToken.Type), ColorContent(currToken.Content)))
+			}
+
+			if patternToken.IsIgnoreInResult {
+
+				ignores = append(ignores, iterator.Offset+iter+moveIter)
+			}
+
+			if currToken.Type == patternToken.Type {
+
+				childMark.Begin = iterator.Offset + iter
+			}
+
+			moveIter = 1
+
+		} else if patternToken.IsAny {
+
+			var currToken = iterator.GetBy(iter)
+			if currToken == nil {
+				match = false
+			}
+
+			if patternToken.NumNextMoreAny > 0 {
+				for n := 1; n <= patternToken.NumNextMoreAny; n++ {
+					testToken := iterator.GetBy(iter + n)
+					if testToken == nil {
+						match = false
+					}
+				}
+			}
+			moveIter = 1 + patternToken.NumNextMoreAny
+		}
+		if !match {
+
+			break
+		}
+
+		iter += moveIter
+
+		childMark.End = iterator.Offset + iter
+
+		iterToken++
 	}
 	return marks
 }

@@ -10,8 +10,9 @@ type PatternToken struct {
 	IsIgnoreInResult bool
 	CanNested        bool
 	ExportType       int
-	IsAny            bool //if true match any next token
-	NumNextMoreAny   int  // if > 0 && isAny = true, check if there is next NumNextMoreAny + 1 tokens
+	IsAny            bool           //if true match any next token
+	NumNextMoreAny   int            // if > 0 && isAny = true, check if there is next NumNextMoreAny + 1 tokens
+	Nested           []PatternToken //check if contain these tokens
 }
 
 //Pattern define a pattern is a array of token type
@@ -19,6 +20,8 @@ type Pattern struct {
 	Type                 int
 	Struct               []PatternToken
 	IsRemoveGlobalIgnore bool
+	LivingContext        []int //only available when the pattern token is found inside one of the livingContext token array.
+	RequireLastToken     int
 }
 
 //Mark define a result of finding parttern process

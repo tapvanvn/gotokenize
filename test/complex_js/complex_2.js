@@ -1,29 +1,17 @@
 
 if (true) {}else if (false) {} else {}
-if (true ) do_some_thing();
-function func_1(){
+if (true ) do_some_thing();function func_1(){
   function iner_func() {
-  }
+    switch (b) { case ac: var abc = "def";break;default:break;}}
 }
-var a = function(){
-
-}
-
-var d = d ? e : func_1()
 
 do {
-  var v = test ? a : b
+
 } while (d)
 
 while (a) {
 
 }
-class abc {
-    constructor() {
-      this.array = new Array();
-    }
-}
-
 var IntSet = class {
     constructor() {
       this.array = new Array();

@@ -60,11 +60,11 @@ func (stream *TokenStream) AddTokenByContent(content []rune, tokenType int) {
 }
 
 //Debug print debug tree
-func (stream *TokenStream) Debug(level int, fnName func(int) string) {
+func (stream *TokenStream) Debug(level int, fnName func(int) string, options *DebugOption) {
 
 	for _, token := range stream.Tokens {
 
-		token.Debug(level, fnName)
+		token.Debug(level, fnName, options)
 	}
 }
 

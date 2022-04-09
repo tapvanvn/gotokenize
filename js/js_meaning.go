@@ -19,12 +19,31 @@ func NewDefaultJSRawMeaning() *JSRawMeaning {
 
 	return jsRawMeaning
 }
+func NewDefaultJSPhraseMeaning() *JSPhraseMeaning {
 
-func NewDefaultJSMeaning() *gotokenize.PatternMeaning {
+	return NewJSPhraseMeaning(NewDefaultJSRawMeaning())
+}
 
-	jsRawMeaning := NewDefaultJSRawMeaning()
+func NewDefaultJSPatternMeaning() gotokenize.IMeaning {
 
-	return gotokenize.NewPatternMeaning(jsRawMeaning, JSPatterns, gotokenize.NoTokens, JSGlobalNested)
+	var last gotokenize.IMeaning = NewDefaultJSOperatorMeaning()
+
+	for _, pattern := range JSPatterns {
+
+		last = gotokenize.NewPatternMeaning(last, pattern.Patterns, pattern.IgnoreTokens, pattern.TokenCanNested)
+	}
+	return last
+}
+
+func NewDefaultJSMeaning() gotokenize.IMeaning {
+
+	//return NewJSPhraseMeaning(NewDefaultJSPatternMeaning())
+	return NewDefaultJSPatternMeaning()
+}
+
+func NewDefaultJSOperatorMeaning() *JSOperatorMeaning {
+
+	return NewJSOperatorMeaning(NewDefaultJSPhraseMeaning())
 }
 
 func NewDefaultJSInstructionMeaning() *JSInstructionMeaning {

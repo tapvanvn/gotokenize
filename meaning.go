@@ -47,7 +47,7 @@ func (meaning *AbstractMeaning) Prepare(process *MeaningProcess) {
 				tmpStream.AddToken(*token)
 			}
 			//fmt.Printf("after do prepare %s numToken:%d\n", meaning.BaseMeaning.GetName(), tmpStream.Length())
-			process.SetStream(&tmpStream)
+			process.SetStream(process.ParentTokens, &tmpStream)
 
 		}
 	}
