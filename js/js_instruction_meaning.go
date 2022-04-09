@@ -1,8 +1,6 @@
 package js
 
 import (
-	"fmt"
-
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
@@ -39,7 +37,7 @@ func (meaning *JSInstructionMeaning) Next(process *gotokenize.MeaningProcess) *g
 	token := meaning.getNextMeaningToken(process.Iter)
 	if token != nil {
 		if token.Type == TokenJSClassFunction {
-			fmt.Println("process token clas function")
+			//fmt.Println("process token clas function")
 			iter := token.Children.Iterator()
 			iter.Seek(1)
 			meaning.processIter(iter)
@@ -90,7 +88,7 @@ func (meaning *JSInstructionMeaning) getNextMeaningToken(iter *gotokenize.Iterat
 
 		} else if token.Type != TokenJSPhraseBreak && !gotokenize.IsContainToken(optimizePhraseTokens, token.Type) /*token.Type != TokenJSPhrase*/ {
 
-			fmt.Println("begin phrase", JSTokenName(token.Type))
+			//fmt.Println("begin phrase", JSTokenName(token.Type))
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
 			meaning.processChild(token)
 			tmpToken.Children.AddToken(*token)

@@ -227,6 +227,7 @@ var JSPhraseAllow = []int{
 	TokenJSFunctionLambda,
 	TokenJSFunction,
 	TokenJSClass,
+	TokenJSTreeDotOperator,
 }
 
 //JSPatterns Patterns to detech structure of js

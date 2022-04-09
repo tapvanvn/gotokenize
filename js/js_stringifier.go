@@ -71,6 +71,10 @@ func (stringifier *Stringifier) PutToken(token *gotokenize.Token) {
 
 		stringifier.PutBracket(token)
 
+	} else if token.Type == TokenJSBracketSquare {
+
+		stringifier.PutBracketSquare(token)
+
 	} else if token.Type == TokenJSWord {
 
 		stringifier.PutWord(token)
@@ -85,8 +89,24 @@ func (stringifier *Stringifier) PutToken(token *gotokenize.Token) {
 
 	} else if token.Type == TokenJSClass {
 
+		stringifier.PutClass(token)
+
+	} else if token.Type == TokenJSClassFunction {
+
+		stringifier.PutClassFunction(token)
+
 	} else if token.Type == TokenJSAssignVariable {
+
 		stringifier.PutAssignVariable(token)
+
+	} else if token.Type == TokenJSFunctionLambda {
+
+		stringifier.PutLambda(token)
+
+	} else if token.Type == TokenJSRegex {
+
+		stringifier.PutRegex(token)
+
 	} else {
 
 		stringifier.put(token.Content, &DefaultStroke)
@@ -100,6 +120,12 @@ func (stringifier *Stringifier) PutStream(iter *gotokenize.Iterator) {
 		}
 		stringifier.PutToken(token)
 	}
+}
+func (stringifier *Stringifier) PutLambda(token *gotokenize.Token) {
+	stringifier.PutToken(token.Children.GetTokenAt(0))
+	stringifier.put("=>", &BreakAfterStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(1))
+	stringifier.put("", &DefaultStroke)
 }
 func (stringifier *Stringifier) PutAssignVariable(token *gotokenize.Token) {
 
@@ -116,9 +142,19 @@ func (stringifier *Stringifier) PutPhrase(token *gotokenize.Token) {
 	iter := token.Children.Iterator()
 	stringifier.put("", &NeedBreakStroke)
 	stringifier.PutStream(iter)
+	stringifier.put("", &DefaultStroke)
 }
+
 func (stringifier *Stringifier) PutClass(token *gotokenize.Token) {
 
+	stringifier.put("class", &DefaultStroke)
+	stringifier.PutStream(token.Children.Iterator())
+}
+func (stringifier *Stringifier) PutClassFunction(token *gotokenize.Token) {
+
+	stringifier.put("", &NeedBreakStroke)
+	stringifier.PutStream(token.Children.Iterator())
+	stringifier.put("", &DefaultStroke)
 }
 
 func (stringifier *Stringifier) PutBracket(token *gotokenize.Token) {
@@ -135,6 +171,21 @@ func (stringifier *Stringifier) PutBracket(token *gotokenize.Token) {
 		stringifier.PutToken(childToken)
 	}
 	stringifier.put(")", &BreakAfterStroke)
+}
+func (stringifier *Stringifier) PutBracketSquare(token *gotokenize.Token) {
+
+	stringifier.put("[", &BreakAfterStroke)
+
+	iter := token.Children.Iterator()
+	for {
+		childToken := iter.Read()
+
+		if childToken == nil {
+			break
+		}
+		stringifier.PutToken(childToken)
+	}
+	stringifier.put("]", &BreakAfterStroke)
 }
 
 func (stringifier *Stringifier) PutBlock(token *gotokenize.Token) {
@@ -187,7 +238,11 @@ func (stringifier *Stringifier) PutIfTrail(token *gotokenize.Token) {
 		}
 	}
 }
-
+func (stringifier *Stringifier) PutRegex(token *gotokenize.Token) {
+	stringifier.put(token.Content, &DefaultStroke)
+	stringifier.put(token.Children.ConcatStringContent(), &DefaultStroke)
+	stringifier.put(token.Content, &DefaultStroke)
+}
 func (stringifier *Stringifier) PutString(token *gotokenize.Token) {
 	stringifier.put(token.Content, &DefaultStroke)
 	stringifier.put(token.Children.ConcatStringContent(), &DefaultStroke)
