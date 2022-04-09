@@ -300,52 +300,52 @@ var JSPatternLevel1 = gotokenize.PatternMeaningDefine{
 				{IsAny: true, CanNested: true},
 			},
 		},
-		/*
-			// Object Properties with word
-			{
-				Type:                 TokenJSObjectProperty,
-				IsRemoveGlobalIgnore: true,
-				Struct: []gotokenize.PatternToken{
-					{Type: TokenJSWord},
-					{Content: ":", IsIgnoreInResult: true},
-					{IsAny: true, CanNested: true},
-					{Content: ",", IsIgnoreInResult: true},
-				},
-				LivingContext: []int{TokenJSBlock},
+
+		// Object Properties with word
+		{
+			Type:                 TokenJSObjectProperty,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Type: TokenJSWord},
+				{Content: ":", IsIgnoreInResult: true},
+				{IsAny: true, CanNested: true},
+				{Content: ",", IsIgnoreInResult: true},
 			},
-			// Object Properties with string
-			{
-				Type:                 TokenJSObjectProperty,
-				IsRemoveGlobalIgnore: true,
-				Struct: []gotokenize.PatternToken{
-					{Type: TokenJSString},
-					{Content: ":", IsIgnoreInResult: true},
-					{IsAny: true, CanNested: true},
-				},
-				LivingContext: []int{TokenJSBlock},
+			LivingContext: []int{TokenJSBlock},
+		},
+		// Object Properties with string
+		{
+			Type:                 TokenJSObjectProperty,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Type: TokenJSString},
+				{Content: ":", IsIgnoreInResult: true},
+				{IsAny: true, CanNested: true},
 			},
-			// Object last Properties with word
-			{
-				Type:                 TokenJSObjectProperty,
-				IsRemoveGlobalIgnore: true,
-				Struct: []gotokenize.PatternToken{
-					{Type: TokenJSWord},
-					{Content: ":", IsIgnoreInResult: true},
-					{IsAny: true, CanNested: true},
-				},
-				LivingContext: []int{TokenJSBlock},
+			LivingContext: []int{TokenJSBlock},
+		},
+		// Object last Properties with word
+		{
+			Type:                 TokenJSObjectProperty,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Type: TokenJSWord},
+				{Content: ":", IsIgnoreInResult: true},
+				{IsAny: true, CanNested: true},
 			},
-			// Object last Properties with string
-			{
-				Type:                 TokenJSObjectProperty,
-				IsRemoveGlobalIgnore: true,
-				Struct: []gotokenize.PatternToken{
-					{Type: TokenJSString},
-					{Content: ":", IsIgnoreInResult: true},
-					{IsAny: true, CanNested: true},
-				},
-				LivingContext: []int{TokenJSBlock},
-			},*/
+			LivingContext: []int{TokenJSBlock},
+		},
+		// Object last Properties with string
+		{
+			Type:                 TokenJSObjectProperty,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Type: TokenJSString},
+				{Content: ":", IsIgnoreInResult: true},
+				{IsAny: true, CanNested: true},
+			},
+			LivingContext: []int{TokenJSBlock},
+		},
 		//pattern function with keyword and name
 		{
 			Type:                 TokenJSFunction,
