@@ -27,7 +27,7 @@ func CreateXMLRawMeaning() *gotokenize.PatternMeaning {
 
 	xmlRawMeaning := NewXMLRawMeaning(meaning)
 
-	return gotokenize.NewPatternMeaning(xmlRawMeaning, XMLPatterns, XMLIgnores, XMLGlobalNested)
+	return gotokenize.NewPatternMeaning(xmlRawMeaning, XMLPatterns, XMLIgnores, XMLGlobalNested, gotokenize.NoTokens)
 }
 
 func (meaning *XMLRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {

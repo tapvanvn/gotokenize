@@ -129,7 +129,7 @@ func IsContainOneOfTokens(tokens []int, tokenTypes []int) bool {
 }
 
 //FindPattern search pattern
-func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ignoreTokens []int, parentTokens []int, lastToken int) []Mark {
+func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ignoreTokens []int, context *MeaningContext) []Mark {
 
 	marks := []Mark{}
 
@@ -155,11 +155,11 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 
 		var childMark *Mark = nil
 
-		if len(pattern.LivingContext) > 0 && !IsContainOneOfTokens(pattern.LivingContext, parentTokens) {
+		if len(pattern.LivingContext) > 0 && !IsContainOneOfTokens(pattern.LivingContext, context.AncestorTokens) {
 
 			continue
 		}
-		if pattern.RequireLastToken > 0 && pattern.RequireLastToken != lastToken {
+		if pattern.RequireLastToken > 0 && pattern.RequireLastToken != context.PreviousToken {
 
 			continue
 		}

@@ -9,15 +9,14 @@ func NewMeaningProcessFromStream(parentTokens []int, stream *TokenStream) *Meani
 var EmptyParentTokens = []int{}
 
 type MeaningProcess struct {
-	Stream          *TokenStream
-	Iter            *Iterator
-	ParentTokens    []int
-	PassedTokenType int
+	Stream  *TokenStream
+	Iter    *Iterator
+	Context MeaningContext
 }
 
-func (proc *MeaningProcess) SetStream(parentTokens []int, stream *TokenStream) {
+func (proc *MeaningProcess) SetStream(ancestors []int, stream *TokenStream) {
 	proc.Stream = stream
 	proc.Iter = proc.Stream.Iterator()
-	proc.ParentTokens = parentTokens
-	proc.PassedTokenType = TokenNoType
+	proc.Context.AncestorTokens = ancestors
+	proc.Context.PreviousToken = TokenNoType
 }

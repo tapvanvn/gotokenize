@@ -14,6 +14,12 @@ type IMeaning interface {
 	Propagate(func(meaning IMeaning))
 }
 
+type MeaningContext struct {
+	AncestorTokens       []int
+	PreviousToken        int
+	PreviousTokenContent string
+}
+
 func NewAbtractMeaning(base IMeaning) *AbstractMeaning {
 
 	return &AbstractMeaning{
@@ -47,7 +53,7 @@ func (meaning *AbstractMeaning) Prepare(process *MeaningProcess) {
 				tmpStream.AddToken(*token)
 			}
 			//fmt.Printf("after do prepare %s numToken:%d\n", meaning.BaseMeaning.GetName(), tmpStream.Length())
-			process.SetStream(process.ParentTokens, &tmpStream)
+			process.SetStream(process.Context.AncestorTokens, &tmpStream)
 
 		}
 	}

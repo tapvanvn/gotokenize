@@ -2,18 +2,20 @@ package gotokenize
 
 type PatternMeaning struct {
 	*AbstractMeaning
-	Patterns       []Pattern
-	IgnoreTokens   []int
-	TokenCanNested []int
+	Patterns          []Pattern
+	IgnoreTokens      []int
+	TokenCanNested    []int
+	PreventLoopTokens []int
 }
 
 type PatternMeaningDefine struct {
-	Patterns       []Pattern
-	IgnoreTokens   []int
-	TokenCanNested []int
+	Patterns          []Pattern
+	IgnoreTokens      []int
+	TokenCanNested    []int
+	PreventLoopTokens []int
 }
 
-func NewPatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []int, tokenCanNested []int) *PatternMeaning {
+func NewPatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []int, tokenCanNested []int, preventLoopTokens []int) *PatternMeaning {
 
 	pattern := &PatternMeaning{
 
@@ -28,12 +30,12 @@ func NewPatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []int, 
 
 func (meaning *PatternMeaning) Next(process *MeaningProcess) *Token {
 
-	token := meaning.getNextMeaningToken(process.Iter, process.ParentTokens, process.PassedTokenType)
+	token := meaning.getNextMeaningToken(process.Iter, &process.Context)
 	if token != nil {
 
 		if IsContainToken(meaning.TokenCanNested, token.Type) {
 
-			childProcess := NewMeaningProcessFromStream(append(process.ParentTokens, token.Type), &token.Children)
+			childProcess := NewMeaningProcessFromStream(append(process.Context.AncestorTokens, token.Type), &token.Children)
 
 			subStream := CreateStream(meaning.GetMeaningLevel())
 
@@ -48,22 +50,24 @@ func (meaning *PatternMeaning) Next(process *MeaningProcess) *Token {
 			}
 			token.Children = subStream
 		}
-		process.PassedTokenType = token.Type
+		process.Context.PreviousToken = token.Type
+		process.Context.PreviousTokenContent = token.Content
 	} else {
-		process.PassedTokenType = TokenNoType
+		process.Context.PreviousToken = TokenNoType
+		process.Context.PreviousTokenContent = ""
 	}
 
 	return token
 }
 
-func (meaning *PatternMeaning) getNextMeaningToken(iter *Iterator, parentTokens []int, lastToken int) *Token {
+func (meaning *PatternMeaning) getNextMeaningToken(iter *Iterator, context *MeaningContext) *Token {
 	for {
 
 		if iter.EOS() {
 			break
 		}
 
-		marks := iter.FindPattern(meaning.Patterns, true, meaning.IgnoreTokens, parentTokens, lastToken)
+		marks := iter.FindPattern(meaning.Patterns, true, meaning.IgnoreTokens, context)
 
 		if len(marks) > 0 {
 
@@ -84,7 +88,7 @@ func (meaning *PatternMeaning) getNextMeaningToken(iter *Iterator, parentTokens 
 
 				if childToken != nil && childMark.CanNested {
 
-					childProcess := NewMeaningProcessFromStream(append(parentTokens, childToken.Type), &childToken.Children)
+					childProcess := NewMeaningProcessFromStream(append(context.AncestorTokens, childToken.Type), &childToken.Children)
 
 					subStream := CreateStream(meaning.GetMeaningLevel())
 

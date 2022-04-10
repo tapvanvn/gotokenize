@@ -77,7 +77,7 @@ func TestPatternMeaning(t *testing.T) {
 
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 
-	patternMeaning := gotokenize.NewPatternMeaning(meaning, patterns, []int{2}, gotokenize.NoTokens)
+	patternMeaning := gotokenize.NewPatternMeaning(meaning, patterns, []int{2}, gotokenize.NoTokens, gotokenize.NoTokens)
 
 	proc := gotokenize.NewMeaningProcessFromStream(gotokenize.EmptyParentTokens, &stream)
 

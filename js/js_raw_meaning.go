@@ -21,32 +21,40 @@ type JSRawMeaning struct {
 
 func (meaning *JSRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
-	token := meaning.getNextMeaningToken(process.Iter)
+	token := meaning.getNextMeaningToken(&process.Context, process.Iter)
 
-	if token != nil && token.Children.Length() > 0 && gotokenize.IsContainToken(JSGlobalNested, token.Type) {
+	if token != nil {
 
-		childProcess := gotokenize.NewMeaningProcessFromStream(append(process.ParentTokens, token.Type), &token.Children)
+		if token.Children.Length() > 0 && gotokenize.IsContainToken(JSGlobalNested, token.Type) {
 
-		subStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
+			childProcess := gotokenize.NewMeaningProcessFromStream(append(process.Context.AncestorTokens, token.Type), &token.Children)
 
-		meaning.Prepare(childProcess)
+			subStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
 
-		for {
+			meaning.Prepare(childProcess)
 
-			nestedToken := meaning.Next(childProcess)
+			for {
 
-			if nestedToken == nil {
-				break
+				nestedToken := meaning.Next(childProcess)
+
+				if nestedToken == nil {
+					break
+				}
+				subStream.AddToken(*nestedToken)
 			}
-			subStream.AddToken(*nestedToken)
-		}
 
-		token.Children = subStream
+			token.Children = subStream
+		}
+		process.Context.PreviousToken = token.Type
+		process.Context.PreviousTokenContent = token.Content
+	} else {
+		process.Context.PreviousToken = gotokenize.TokenNoType
+		process.Context.PreviousTokenContent = ""
 	}
 	return token
 }
 
-func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {
+func (meaning *JSRawMeaning) getNextMeaningToken(context *gotokenize.MeaningContext, iter *gotokenize.Iterator) *gotokenize.Token {
 
 	for {
 		if iter.EOS() {
@@ -59,7 +67,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBlock, "{")
 
-			meaning.continueUntil(iter, tmpToken, "}")
+			meaning.continueUntil(context, iter, tmpToken, "}")
 
 			return tmpToken
 
@@ -67,7 +75,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBracketSquare, "[")
 
-			meaning.continueUntil(iter, tmpToken, "]")
+			meaning.continueUntil(context, iter, tmpToken, "]")
 
 			return tmpToken
 
@@ -75,7 +83,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBracket, "(")
 
-			meaning.continueUntil(iter, tmpToken, ")")
+			meaning.continueUntil(context, iter, tmpToken, ")")
 
 			return tmpToken
 
@@ -83,7 +91,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSString, token.Content)
 
-			meaning.continueReadString(iter, tmpToken, token.Content)
+			meaning.continueReadString(context, iter, tmpToken, token.Content)
 
 			return tmpToken
 
@@ -127,7 +135,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 					_ = iter.Read()
 
-					meaning.continueReadLineComment(iter, tmpToken)
+					meaning.continueReadLineComment(context, iter, tmpToken)
 
 					return tmpToken
 
@@ -137,19 +145,23 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 					_ = iter.Read()
 
-					meaning.continueReadBlockComment(iter, tmpToken)
+					meaning.continueReadBlockComment(context, iter, tmpToken)
 
 					return tmpToken
 
+				} else if nextToken.Content == "=" {
+
+					return gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSAssign, "/=")
+
 				} else {
 
-					if meaning.testRegex(iter) {
+					if meaning.testRegex(context, iter) {
 
 						tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSRegex, "")
 
 						tmpToken.Children.AddToken(gotokenize.Token{Type: TokenJSWord, Content: "/"})
 
-						meaning.continueReadRegex(iter, tmpToken)
+						meaning.continueReadRegex(context, iter, tmpToken)
 
 						return tmpToken
 					} else {
@@ -162,12 +174,12 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 
 		} else if token.Content == " " || token.Content == "\t" {
 
-			return meaning.getNextMeaningToken(iter)
+			return meaning.getNextMeaningToken(context, iter)
 
 		} else if token.Content == ";" || token.Content == "\n" || token.Content == "\r" {
 
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhraseBreak, "")
-			meaning.continueMergePhraseBreak(iter, tmpToken)
+			meaning.continueMergePhraseBreak(context, iter, tmpToken)
 			return tmpToken
 
 		} else if token.Content == "!" { //!, !=, !==
@@ -212,6 +224,10 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 					tmpToken.Content += "+"
 					tmpToken.Type = TokenJSUnaryOperator
 					_ = iter.Read()
+				} else if nextToken.Content == "=" {
+					tmpToken.Content += "="
+					tmpToken.Type = TokenJSAssign
+					_ = iter.Read()
 				}
 			}
 			return tmpToken
@@ -222,13 +238,28 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 					tmpToken.Content += "-"
 					tmpToken.Type = TokenJSUnaryOperator
 					_ = iter.Read()
+				} else if nextToken.Content == "=" {
+					tmpToken.Content += "="
+					tmpToken.Type = TokenJSAssign
+					_ = iter.Read()
 				}
 			}
 			return tmpToken
+		} else if token.Content == "%" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, "%")
+			if nextToken := iter.Get(); nextToken != nil {
+				if nextToken.Content == "=" {
+					tmpToken.Content += "="
+					tmpToken.Type = TokenJSAssign
+					_ = iter.Read()
+				}
+			}
+			return tmpToken
+
 		} else if token.Content == "~" {
 			token.Type = TokenJSUnaryOperator
 			return token
-		} else if token.Content == "^" || token.Content == "%" || token.Content == "/" || token.Content == ":" {
+		} else if token.Content == "^" || token.Content == "%" || token.Content == "/" {
 			token.Type = TokenJSBinaryOperator
 			return token
 		} else if token.Content == "*" {
@@ -237,18 +268,75 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 				if nextToken.Content == "*" {
 					tmpToken.Content += "*"
 					_ = iter.Read()
+					if nextToken2 := iter.Get(); nextToken2 != nil && nextToken2.Content == "=" {
+						tmpToken.Content += "="
+						tmpToken.Type = TokenJSAssign
+						_ = iter.Read()
+					}
+				} else if nextToken.Content == "=" {
+					tmpToken.Content += "="
+					tmpToken.Type = TokenJSAssign
+					_ = iter.Read()
 				}
 			}
 			return tmpToken
+
+		} else if token.Content == ">" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, ">")
+			if nextToken := iter.Get(); nextToken != nil {
+				if nextToken.Content == ">" {
+					tmpToken.Content += ">"
+					_ = iter.Read()
+					if nextToken2 := iter.Get(); nextToken2 != nil && nextToken2.Content == ">" {
+						tmpToken.Content += ">"
+						tmpToken.Type = TokenJSAssign
+						_ = iter.Read()
+					}
+				} else if nextToken.Content == "=" {
+					tmpToken.Content += "="
+					tmpToken.Type = TokenJSBinaryOperator
+					_ = iter.Read()
+				}
+			}
+			return tmpToken
+
+		} else if token.Content == "<" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, "<")
+			if nextToken := iter.Get(); nextToken != nil {
+				if nextToken.Content == "<" {
+					tmpToken.Content += "<"
+					_ = iter.Read()
+					if nextToken2 := iter.Get(); nextToken2 != nil && nextToken2.Content == "<" {
+						tmpToken.Content += "<"
+						tmpToken.Type = TokenJSAssign
+						_ = iter.Read()
+					}
+				} else if nextToken.Content == "=" {
+					tmpToken.Content += "="
+					tmpToken.Type = TokenJSBinaryOperator
+					_ = iter.Read()
+				}
+			}
+			return tmpToken
+
+		} else if token.Content == "." {
+
+			nextToken := iter.Get()
+			nextToken2 := iter.GetBy(1)
+			if nextToken != nil && nextToken2 != nil && nextToken.Content == "." && nextToken2.Content == "." {
+				token.Type = TokenJSTreeDotOperator
+				token.Content = "..."
+				iter.Read()
+				iter.Read()
+			}
+		} else if token.Content == "?" {
+			token.Type = TokenJSQuestionOperator
+		} else if token.Content == "," {
+			token.Type = TokenJSSoftBreak
 		} else if token.Content == "case" {
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSCase, "")
-			for {
-				nextToken := iter.Read()
-				if nextToken == nil || nextToken.Content == ":" {
-					break
-				}
-				tmpToken.Children.AddToken(*nextToken)
-			}
+			meaning.continueCase(context, iter, tmpToken)
+
 			return tmpToken
 		} else if token.Content == "default" {
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSDefault, "")
@@ -262,20 +350,8 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 		} else if token.Content == "break" {
 			token.Type = TokenJSBreak
 			token.Content = ""
-		} else if token.Content == "." {
-			//token.Type = TokenJSBinaryOperator
-			nextToken := iter.Get()
-			nextToken2 := iter.GetBy(1)
-			if nextToken != nil && nextToken2 != nil && nextToken.Content == "." && nextToken2.Content == "." {
-				token.Type = TokenJSTreeDotOperator
-				token.Content = "..."
-				iter.Read()
-				iter.Read()
-			}
-		} else if token.Content == "?" {
-			token.Type = TokenJSQuestionOperator
-		} else if token.Content == "," {
-			token.Type = TokenJSSoftBreak
+		} else if token.Content == ":" {
+			token.Type = TokenJSColonOperator
 		} else if (token.Type == TokenJSWord || token.Type == 0) && strings.Index(JSKeyWords, fmt.Sprintf(",%s,", token.Content)) > 0 {
 			token.Type = TokenJSKeyWord
 		}
@@ -288,8 +364,20 @@ func (meaning *JSRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *got
 	}
 	return nil
 }
+func (meaning *JSRawMeaning) continueCase(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
+	for {
+		nextToken := meaning.getNextMeaningToken(context, iter)
+		if nextToken == nil || nextToken.Content == ":" {
+			break
+		}
+		if nextToken.Type == TokenJSOperator && len(strings.TrimSpace(nextToken.Content)) == 0 {
+			continue
+		}
+		currentToken.Children.AddToken(*nextToken)
+	}
+}
 
-func (meaning *JSRawMeaning) continueUntil(iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
+func (meaning *JSRawMeaning) continueUntil(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
 
 	var specialCharacter bool = false
 	var lastSpecialToken *gotokenize.Token = nil
@@ -299,7 +387,7 @@ func (meaning *JSRawMeaning) continueUntil(iter *gotokenize.Iterator, currentTok
 			break
 		}
 
-		token := meaning.getNextMeaningToken(iter)
+		token := meaning.getNextMeaningToken(context, iter)
 
 		if token.Content == "\\" {
 
@@ -329,7 +417,7 @@ func (meaning *JSRawMeaning) continueUntil(iter *gotokenize.Iterator, currentTok
 	}
 }
 
-func (meaning *JSRawMeaning) continueReadString(iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
+func (meaning *JSRawMeaning) continueReadString(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
 
 	var specialCharacter = false
 	var lastSpecialToken *gotokenize.Token = nil
@@ -368,10 +456,19 @@ func (meaning *JSRawMeaning) continueReadString(iter *gotokenize.Iterator, curre
 		}
 	}
 }
+func (meaning *JSRawMeaning) isStartPhrase(context *gotokenize.MeaningContext) bool {
+	if context.PreviousToken == gotokenize.TokenNoType ||
+		context.PreviousToken == TokenJSAssign {
+		return true
+	}
+	return false
+}
 
 //testRegex test if reach regex
-func (meaning *JSRawMeaning) testRegex(iter *gotokenize.Iterator) bool {
-
+func (meaning *JSRawMeaning) testRegex(context *gotokenize.MeaningContext, iter *gotokenize.Iterator) bool {
+	if !meaning.isStartPhrase(context) {
+		return false
+	}
 	var specialCharacter bool = false
 
 	var i = iter.Offset
@@ -402,7 +499,7 @@ func (meaning *JSRawMeaning) testRegex(iter *gotokenize.Iterator) bool {
 	return false
 }
 
-func (meaing *JSRawMeaning) continueMergePhraseBreak(iter *gotokenize.Iterator, currToken *gotokenize.Token) {
+func (meaing *JSRawMeaning) continueMergePhraseBreak(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currToken *gotokenize.Token) {
 	for {
 		token := iter.Get()
 		if token == nil || !(token.Content == ";" || token.Content == "\r" || token.Content == "\n") {
@@ -413,7 +510,7 @@ func (meaing *JSRawMeaning) continueMergePhraseBreak(iter *gotokenize.Iterator, 
 	}
 }
 
-func (meaning *JSRawMeaning) continueReadRegex(iter *gotokenize.Iterator, currToken *gotokenize.Token) {
+func (meaning *JSRawMeaning) continueReadRegex(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currToken *gotokenize.Token) {
 
 	//todo: check syntax violence
 	var specialCharacter bool = false
@@ -470,7 +567,7 @@ func (meaning *JSRawMeaning) continueReadRegex(iter *gotokenize.Iterator, currTo
 	}
 }
 
-func (meaning *JSRawMeaning) continueReadLineComment(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
+func (meaning *JSRawMeaning) continueReadLineComment(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
 
 	for {
 		if iter.EOS() {
@@ -491,7 +588,7 @@ func (meaning *JSRawMeaning) continueReadLineComment(iter *gotokenize.Iterator, 
 	}
 }
 
-func (meaning *JSRawMeaning) continueReadBlockComment(iter *gotokenize.Iterator, currToken *gotokenize.Token) {
+func (meaning *JSRawMeaning) continueReadBlockComment(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currToken *gotokenize.Token) {
 
 	for {
 		if iter.EOS() {

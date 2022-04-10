@@ -107,7 +107,7 @@ func (meaning *RawMeaning) Prepare(proc *MeaningProcess) {
 		})
 	}
 	//fmt.Printf("after raw prepare:%d\n", newStream.Length())
-	proc.SetStream(proc.ParentTokens, &newStream)
+	proc.SetStream(proc.Context.AncestorTokens, &newStream)
 }
 
 func (meaning *RawMeaning) Clone() IMeaning {

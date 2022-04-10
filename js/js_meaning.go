@@ -30,7 +30,7 @@ func NewDefaultJSPatternMeaning() gotokenize.IMeaning {
 
 	for _, pattern := range JSPatterns {
 
-		last = gotokenize.NewPatternMeaning(last, pattern.Patterns, pattern.IgnoreTokens, pattern.TokenCanNested)
+		last = gotokenize.NewPatternMeaning(last, pattern.Patterns, pattern.IgnoreTokens, pattern.TokenCanNested, pattern.PreventLoopTokens)
 	}
 	return last
 }
@@ -48,7 +48,7 @@ func NewDefaultJSOperatorMeaning() *JSOperatorMeaning {
 
 func NewDefaultJSInstructionMeaning() *JSInstructionMeaning {
 
-	jsPatternMeaning := NewDefaultJSMeaning()
+	jsPatternMeaning := NewDefaultJSPatternMeaning()
 
 	return NewJSInstructionMeaning(jsPatternMeaning)
 }

@@ -22,54 +22,98 @@ type JSOperatorMeaning struct {
 
 func (meaning *JSOperatorMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
-	token := meaning.getNextMeaningToken(process.Iter)
+	token := meaning.getNextMeaningToken(&process.Context, process.Iter)
 
-	if token != nil && gotokenize.IsContainToken(JSGlobalNested, token.Type) {
+	if token != nil {
+		if gotokenize.IsContainToken(JSGlobalNested, token.Type) {
 
-		proc := gotokenize.NewMeaningProcessFromStream(append(process.ParentTokens, token.Type), &token.Children)
-
-		newStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
-
-		for {
-			token := meaning.Next(proc)
-			if token == nil {
-				break
-			}
-			newStream.AddToken(*token)
+			meaning.processChild(&process.Context, token)
 		}
-		token.Children = newStream
+		process.Context.PreviousToken = token.Type
+		process.Context.PreviousTokenContent = token.Content
+	} else {
+		process.Context.PreviousToken = gotokenize.TokenNoType
+		process.Context.PreviousTokenContent = ""
 	}
 
 	return token
 }
 
-func (meaning *JSOperatorMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {
+func (meaning *JSOperatorMeaning) getNextMeaningToken(context *gotokenize.MeaningContext, iter *gotokenize.Iterator) *gotokenize.Token {
 
 	if token := iter.Read(); token != nil {
 
-		if token.Type == TokenJSWord || token.Type == TokenJSPhrase {
+		if (token.Type == TokenJSWord || token.Type == TokenJSPhrase || token.Type == TokenJSString) && meaning.testOperatorPhrase(context, iter) {
 
-			meaning.continueOperatorPhrase(iter, token)
+			meaning.continueOperatorPhrase(context, iter, token)
 		}
 		return token
 	}
 
 	return nil
 }
-func (meaning *JSOperatorMeaning) continueOperatorPhrase(iter *gotokenize.Iterator, parentToken *gotokenize.Token) {
+func (meaning *JSOperatorMeaning) processChild(context *gotokenize.MeaningContext, parentToken *gotokenize.Token) {
+
+	proc := gotokenize.NewMeaningProcessFromStream(append(context.AncestorTokens, parentToken.Type), &parentToken.Children)
+
+	newStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
+
+	for {
+		token := meaning.Next(proc)
+		if token == nil {
+			break
+		}
+		if gotokenize.IsContainToken(JSGlobalNested, token.Type) {
+
+			meaning.processChild(context, token)
+		} else {
+			//fmt.Println("stop at", JSTokenName(token.Type))
+		}
+		newStream.AddToken(*token)
+	}
+	parentToken.Children = newStream
+}
+func (meaning *JSOperatorMeaning) testOperatorPhrase(context *gotokenize.MeaningContext, iter *gotokenize.Iterator) bool {
+
+	numOperator := 0
+	i := 0
+	for {
+		token := iter.GetBy(i)
+
+		if token == nil || strings.Contains(notOperatorTrail, ","+token.Content+",") {
+			break
+		}
+		if token.Type == TokenJSBinaryOperator {
+			numOperator++
+		}
+		i++
+	}
+	return numOperator > 0
+}
+func (meaning *JSOperatorMeaning) continueOperatorPhrase(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, parentToken *gotokenize.Token) {
 	trail := gotokenize.CreateStream(meaning.GetMeaningLevel())
 	trail.AddToken(*parentToken)
+	numOperator := 0
 	for {
 		token := iter.Get()
-		if token == nil || token.Type != TokenJSBinaryOperator || strings.Contains(notOperatorTrail, ","+token.Content+",") {
+
+		if token == nil || strings.Contains(notOperatorTrail, ","+token.Content+",") {
 			break
+		}
+		if token.Type == TokenJSBinaryOperator {
+			numOperator++
 		}
 		_ = iter.Read()
 		trail.AddToken(*token)
-		trail.AddToken(*iter.Read())
+		//trail.AddToken(*iter.Read())
 	}
-	if trail.Length() > 2 {
+	if trail.Length() > 2 && numOperator > 0 {
 		parentToken.Type = TokenJSOperatorTrail
 		parentToken.Children = trail
 	}
+}
+
+func (meaning *JSOperatorMeaning) GetName() string {
+
+	return "JSOperatorMeaning"
 }

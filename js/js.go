@@ -12,9 +12,10 @@ const (
 	TokenJSOperator    = 2
 	TokenJSPhraseBreak = 3
 
-	TokenJSKeyWord          = 100
-	TokenJSSoftBreak        = 101 // ,
-	TokenJSPhrase           = 102
+	TokenJSKeyWord   = 100
+	TokenJSSoftBreak = 101 // ,
+	TokenJSPhrase    = 102
+
 	TokenJSBracket          = 103 //()
 	TokenJSBlock            = 104 //{}
 	TokenJSBracketSquare    = 105 //[]
@@ -27,26 +28,27 @@ const (
 	TokenJSLineComment      = 112 // //
 	TokenJSBlockComment     = 113 // /**/
 	TokenJSRegex            = 114 // //img
+	TokenJSMinusPhrase      = 115
+	TokenJSColonOperator    = 116
 
-	TokenJSFunction       = 200
-	TokenJSFunctionLambda = 201
-	TokenJSVariable       = 202
-	TokenJSString         = 203
-	TokenJSFor            = 204
-	TokenJSIf             = 205
-	TokenJSElseIf         = 206
-	TokenJSElse           = 207
-	TokenJSInlineIfBody   = 208
-	TokenJSSwitch         = 209
-	TokenJSCase           = 210
-	TokenJSDefault        = 211
-	TokenJSBreak          = 212
-	TokenJSWhile          = 213
-	TokenJSDo             = 214
-	TokenJSClass          = 215
-	TokenJSClassFunction  = 216
-	TokenJSIfTrail        = 217
-	TokenJSObjectProperty = 218
+	TokenJSFunction           = 200
+	TokenJSFunctionLambda     = 201
+	TokenJSVariable           = 202
+	TokenJSString             = 203
+	TokenJSFor                = 204
+	TokenJSIf                 = 205
+	TokenJSElseIf             = 206
+	TokenJSElse               = 207
+	TokenJSSwitch             = 209
+	TokenJSCase               = 210
+	TokenJSDefault            = 211
+	TokenJSBreak              = 212
+	TokenJSWhile              = 213
+	TokenJSDo                 = 214
+	TokenJSClass              = 215
+	TokenJSClassFunction      = 216
+	TokenJSObjectProperty     = 218
+	TokenJSObjectLastProperty = 219
 
 	//TokenJSStrongBreak           = 300 //sure `;`
 	//TokenJSArgumentList          = 301 //use in function declaration and function call
@@ -83,6 +85,8 @@ var JSTokenNameDictionary = map[int]string{
 	TokenJSBracket:          "bracket",
 	TokenJSBracketSquare:    "square",
 	TokenJSBlock:            "block",
+	TokenJSMinusPhrase:      "minus phrase",
+	TokenJSColonOperator:    "colon",
 	//
 	TokenJSVariable:       "variable",
 	TokenJSString:         "string",
@@ -90,7 +94,6 @@ var JSTokenNameDictionary = map[int]string{
 	TokenJSIf:             "if",
 	TokenJSElseIf:         "elseif",
 	TokenJSElse:           "else",
-	TokenJSInlineIfBody:   "inline if body",
 	TokenJSSwitch:         "switch",
 	TokenJSCase:           "case",
 	TokenJSDefault:        "default",
@@ -102,12 +105,12 @@ var JSTokenNameDictionary = map[int]string{
 	TokenJSClass:          "class",
 	TokenJSClassFunction:  "class function",
 
-	TokenJSIfTrail:        "if trail",
-	TokenJSOperatorTrail:  "operator trail",
-	TokenJSObjectProperty: "property",
-	TokenJSInlineIf:       "inline if",
-	TokenJSAssignVariable: "assign variable",
-	TokenJSVoidStatement:  "void statement",
+	TokenJSOperatorTrail:      "operator trail",
+	TokenJSObjectProperty:     "property",
+	TokenJSObjectLastProperty: "property",
+	TokenJSInlineIf:           "inline if",
+	TokenJSAssignVariable:     "assign variable",
+	TokenJSVoidStatement:      "void statement",
 }
 
 //JSTokenName return name from type of token
@@ -141,7 +144,10 @@ var JSKeyWords string = `
 var JSDebugOptions = &gotokenize.DebugOption{
 	StringifyTokens: []int{
 		TokenJSString,
-		TokenJSRegex,
+		//TokenJSRegex,
+		TokenJSLineComment,
+		TokenJSBlockComment,
+		//TokenJSOperatorTrail,
 	},
 }
 
@@ -177,6 +183,7 @@ var JSGlobalNested = []int{
 	TokenJSBracketSquare,
 	TokenJSClass,
 	TokenJSPhrase,
+	TokenJSMinusPhrase,
 }
 
 //JSPatternOperator the patterns to detect instruction structure
@@ -206,29 +213,81 @@ var JSLevel2GlobalNested = append(
 	TokenJSElse,
 	TokenJSFunction,
 	TokenJSFunctionLambda,
-	TokenJSPhrase,
-	TokenJSClass,
 	TokenJSClassFunction,
+	TokenJSFor,
+	TokenJSSwitch,
+	TokenJSAssignVariable,
+)
+
+var JSInstructionGlobalNested = append(
+	JSLevel2GlobalNested,
+	TokenJSInlineIf,
 )
 
 var JSPatternLevel1 = gotokenize.PatternMeaningDefine{
-	IgnoreTokens:   gotokenize.NoTokens,
-	TokenCanNested: JSGlobalNested,
+	IgnoreTokens:      gotokenize.NoTokens,
+	TokenCanNested:    JSGlobalNested,
+	PreventLoopTokens: []int{TokenJSAssignVariable},
 	Patterns: []gotokenize.Pattern{
+		{
+			Type:                 TokenJSAssignVariable,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{IsAny: true, CanNested: true},
+				{Type: TokenJSAssign},
+				{IsAny: true, CanNested: true},
+			},
+		},
+	},
+}
 
+var JSPatternLevel2 = gotokenize.PatternMeaningDefine{
+	IgnoreTokens: gotokenize.NoTokens,
+	TokenCanNested: append(JSGlobalNested,
+		TokenJSAssignVariable,
+		TokenJSOperatorTrail),
+	Patterns: []gotokenize.Pattern{
+		{
+			Type:                 TokenJSMinusPhrase,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Content: "-", IsIgnoreInResult: true},
+				{Type: TokenJSPhrase},
+			},
+		},
+		{
+			Type:                 TokenJSMinusPhrase,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Content: "-", IsIgnoreInResult: true},
+				{Type: TokenJSOperatorTrail},
+			},
+		},
 		//inline if
 		{
 			Type:                 TokenJSInlineIf,
 			IsRemoveGlobalIgnore: true,
 			Struct: []gotokenize.PatternToken{
 				{IsAny: true, CanNested: true},
-				{Type: TokenJSQuestionOperator, IsIgnoreInResult: true},
+				{Type: TokenJSQuestionOperator},
 				{IsAny: true, CanNested: true},
-				{Content: ":", IsIgnoreInResult: true},
+				{Type: TokenJSColonOperator},
 				{IsAny: true, CanNested: true},
 			},
 		},
-		//Function call
+		{
+			Type:                 TokenJSInlineIf,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{IsAny: true, CanNested: true},
+				{Type: TokenJSQuestionOperator},
+				{Type: TokenJSPhrase, CanNested: true, Nested: []gotokenize.PatternToken{
+					{IsAny: true, CanNested: true},
+					{Type: TokenJSColonOperator},
+					{IsAny: true, CanNested: true},
+				}},
+			},
+		},
 		//pattern if block
 		{
 			Type:                 TokenJSIf,
@@ -269,16 +328,6 @@ var JSPatternLevel1 = gotokenize.PatternMeaningDefine{
 				{IsAny: true, CanNested: true},
 			},
 		},
-		//pattern switch
-		{
-			Type:                 TokenJSSwitch,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "switch", IsIgnoreInResult: true},
-				{Type: TokenJSBracket, CanNested: true},
-				{Type: TokenJSBlock, CanNested: true},
-			},
-		},
 		//pattern do block
 		{
 			Type:                 TokenJSDo,
@@ -300,51 +349,15 @@ var JSPatternLevel1 = gotokenize.PatternMeaningDefine{
 				{IsAny: true, CanNested: true},
 			},
 		},
-
-		// Object Properties with word
+		//pattern switch
 		{
-			Type:                 TokenJSObjectProperty,
+			Type:                 TokenJSSwitch,
 			IsRemoveGlobalIgnore: true,
 			Struct: []gotokenize.PatternToken{
-				{Type: TokenJSWord},
-				{Content: ":", IsIgnoreInResult: true},
-				{IsAny: true, CanNested: true},
-				{Content: ",", IsIgnoreInResult: true},
+				{Content: "switch", IsIgnoreInResult: true},
+				{Type: TokenJSBracket, CanNested: true},
+				{Type: TokenJSBlock, CanNested: true},
 			},
-			LivingContext: []int{TokenJSBlock},
-		},
-		// Object Properties with string
-		{
-			Type:                 TokenJSObjectProperty,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Type: TokenJSString},
-				{Content: ":", IsIgnoreInResult: true},
-				{IsAny: true, CanNested: true},
-			},
-			LivingContext: []int{TokenJSBlock},
-		},
-		// Object last Properties with word
-		{
-			Type:                 TokenJSObjectProperty,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Type: TokenJSWord},
-				{Content: ":", IsIgnoreInResult: true},
-				{IsAny: true, CanNested: true},
-			},
-			LivingContext: []int{TokenJSBlock},
-		},
-		// Object last Properties with string
-		{
-			Type:                 TokenJSObjectProperty,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Type: TokenJSString},
-				{Content: ":", IsIgnoreInResult: true},
-				{IsAny: true, CanNested: true},
-			},
-			LivingContext: []int{TokenJSBlock},
 		},
 		//pattern function with keyword and name
 		{
@@ -352,10 +365,8 @@ var JSPatternLevel1 = gotokenize.PatternMeaningDefine{
 			IsRemoveGlobalIgnore: true,
 			Struct: []gotokenize.PatternToken{
 				{Content: "function", IsIgnoreInResult: true},
-				{Type: TokenJSPhrase, CanNested: true, Nested: []gotokenize.PatternToken{
-					{Type: TokenJSWord},
-					{Type: TokenJSBracket, CanNested: true},
-				}},
+				{Type: TokenJSWord},
+				{Type: TokenJSBracket, CanNested: true},
 				{Type: TokenJSBlock, CanNested: true},
 			},
 		},
@@ -375,7 +386,40 @@ var JSPatternLevel1 = gotokenize.PatternMeaningDefine{
 			IsRemoveGlobalIgnore: true,
 			Struct: []gotokenize.PatternToken{
 				{Content: "class", IsIgnoreInResult: true},
-				{IsAny: true, CanNested: true},
+				{Type: TokenJSBlock, CanNested: true},
+			},
+		},
+		//class extends
+		{
+			Type:                 TokenJSClass,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Content: "class", IsIgnoreInResult: true},
+				{Content: "extends"},
+				{Type: TokenJSWord},
+				{Type: TokenJSBlock, CanNested: true},
+			},
+		},
+		//class with name
+		{
+			Type:                 TokenJSClass,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Content: "class", IsIgnoreInResult: true},
+				{Type: TokenJSWord},
+				{Type: TokenJSBlock, CanNested: true},
+			},
+		},
+		//class with name
+		{
+			Type:                 TokenJSClass,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Content: "class", IsIgnoreInResult: true},
+				{Type: TokenJSWord},
+				{Content: "extends"},
+				{Type: TokenJSWord},
+				{Type: TokenJSBlock, CanNested: true},
 			},
 		},
 		//pattern function without keyword : using to detech class's function
@@ -394,34 +438,22 @@ var JSPatternLevel1 = gotokenize.PatternMeaningDefine{
 			Type:                 TokenJSClassFunction,
 			IsRemoveGlobalIgnore: true,
 			Struct: []gotokenize.PatternToken{
-				{Type: TokenJSPhrase, CanNested: true, Nested: []gotokenize.PatternToken{
-					{Type: TokenJSWord},
-					{Type: TokenJSBracket, CanNested: true},
-				}},
+				{Type: TokenJSWord},
+				{Type: TokenJSBracket, CanNested: true},
 				{Type: TokenJSBlock, CanNested: true},
 			},
 			LivingContext: []int{TokenJSClass},
 		},
-		//pattern lambda single word
 		{
 			Type:                 TokenJSFunctionLambda,
 			IsRemoveGlobalIgnore: true,
 			Struct: []gotokenize.PatternToken{
 				{IsAny: true, CanNested: true},
-				{Type: TokenJSPhrase, CanNested: true, Nested: []gotokenize.PatternToken{
-					{Type: TokenJSRightArrow},
-					{IsAny: true},
-				}},
+				{Type: TokenJSRightArrow, IsIgnoreInResult: true},
+				{IsAny: true, CanNested: true},
 			},
 		},
-	},
-}
-
-var JSPatternLevel2 = gotokenize.PatternMeaningDefine{
-	IgnoreTokens:   gotokenize.NoTokens,
-	TokenCanNested: JSLevel2GlobalNested,
-	Patterns: []gotokenize.Pattern{
-		{
+		/*{
 			Type:                 TokenJSAssignVariable,
 			IsRemoveGlobalIgnore: true,
 			Struct: []gotokenize.PatternToken{
@@ -429,7 +461,7 @@ var JSPatternLevel2 = gotokenize.PatternMeaningDefine{
 				{Type: TokenJSAssign},
 				{IsAny: true, CanNested: true},
 			},
-		},
+		},*/
 	},
 }
 
@@ -438,6 +470,7 @@ var JSPatterns = []gotokenize.PatternMeaningDefine{
 	JSPatternLevel1,
 	JSPatternLevel2,
 	//JSPatternLevel3,
+	//JSPatternLevel4,
 }
 
 var JSStrongBreakEquivalent = []int{

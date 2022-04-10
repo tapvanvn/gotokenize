@@ -31,6 +31,8 @@ func main() {
 			meaning = js.NewDefaultJSPhraseMeaning()
 		} else if flag.Arg(0) == "operator" {
 			meaning = js.NewDefaultJSOperatorMeaning()
+		} else if flag.Arg(0) == "raw" {
+			meaning = js.NewDefaultJSRawMeaning()
 		}
 	}
 
