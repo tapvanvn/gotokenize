@@ -20,7 +20,9 @@ type JSRawMeaning struct {
 }
 
 func (meaning *JSRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
-
+	/*if len(process.Context.AncestorTokens) == 0 && process.Iter.Offset == 0 {
+		fmt.Print("\033[s") //save cursor the position
+	}*/
 	token := meaning.getNextMeaningToken(&process.Context, process.Iter)
 
 	if token != nil {
@@ -47,10 +49,16 @@ func (meaning *JSRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokeniz
 		}
 		process.Context.PreviousToken = token.Type
 		process.Context.PreviousTokenContent = token.Content
+
 	} else {
 		process.Context.PreviousToken = gotokenize.TokenNoType
 		process.Context.PreviousTokenContent = ""
 	}
+	/*if len(process.Context.AncestorTokens) == 0 {
+		fmt.Print("\033[u\033[K") //restore
+		fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
+		fmt.Print("\033[A")
+	}*/
 	return token
 }
 
@@ -150,7 +158,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(context *gotokenize.MeaningCont
 					return tmpToken
 
 				} else if nextToken.Content == "=" {
-
+					_ = iter.Read()
 					return gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSAssign, "/=")
 
 				} else {
@@ -176,12 +184,16 @@ func (meaning *JSRawMeaning) getNextMeaningToken(context *gotokenize.MeaningCont
 
 			return meaning.getNextMeaningToken(context, iter)
 
-		} else if token.Content == ";" || token.Content == "\n" || token.Content == "\r" {
+		} else if token.Content == ";" {
 
-			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhraseBreak, "")
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhraseBreak, ";")
 			meaning.continueMergePhraseBreak(context, iter, tmpToken)
 			return tmpToken
 
+		} else if token.Content == "\n" || token.Content == "\r" {
+			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhraseBreak, "")
+			meaning.continueMergePhraseBreak(context, iter, tmpToken)
+			return tmpToken
 		} else if token.Content == "!" { //!, !=, !==
 
 			token.Type = TokenJSUnaryOperator
@@ -502,7 +514,7 @@ func (meaning *JSRawMeaning) testRegex(context *gotokenize.MeaningContext, iter 
 func (meaing *JSRawMeaning) continueMergePhraseBreak(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currToken *gotokenize.Token) {
 	for {
 		token := iter.Get()
-		if token == nil || !(token.Content == ";" || token.Content == "\r" || token.Content == "\n") {
+		if token == nil || !(token.Content == "\r" || token.Content == "\n") {
 
 			break
 		}

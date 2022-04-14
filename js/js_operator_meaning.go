@@ -1,6 +1,7 @@
 package js
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/tapvanvn/gotokenize/v2"
@@ -21,7 +22,9 @@ type JSOperatorMeaning struct {
 }
 
 func (meaning *JSOperatorMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
-
+	if len(process.Context.AncestorTokens) == 0 && process.Iter.Offset == 0 {
+		fmt.Print("\033[s") //save cursor the position
+	}
 	token := meaning.getNextMeaningToken(&process.Context, process.Iter)
 
 	if token != nil {
@@ -36,6 +39,12 @@ func (meaning *JSOperatorMeaning) Next(process *gotokenize.MeaningProcess) *goto
 		process.Context.PreviousTokenContent = ""
 	}
 
+	if len(process.Context.AncestorTokens) == 0 {
+		fmt.Print("\033[u\033[K") //restore
+		fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
+		fmt.Print("\033[A")
+	}
+
 	return token
 }
 
@@ -43,7 +52,9 @@ func (meaning *JSOperatorMeaning) getNextMeaningToken(context *gotokenize.Meanin
 
 	if token := iter.Read(); token != nil {
 
-		if (token.Type == TokenJSWord || token.Type == TokenJSPhrase || token.Type == TokenJSString) && meaning.testOperatorPhrase(context, iter) {
+		if (token.Type == TokenJSWord ||
+			token.Type == TokenJSPhrase ||
+			token.Type == TokenJSString || token.Type == TokenJSBracket) && meaning.testOperatorPhrase(context, iter) {
 
 			meaning.continueOperatorPhrase(context, iter, token)
 		}
@@ -65,7 +76,7 @@ func (meaning *JSOperatorMeaning) processChild(context *gotokenize.MeaningContex
 		}
 		if gotokenize.IsContainToken(JSGlobalNested, token.Type) {
 
-			meaning.processChild(context, token)
+			//meaning.processChild(context, token)
 		} else {
 			//fmt.Println("stop at", JSTokenName(token.Type))
 		}

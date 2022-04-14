@@ -19,7 +19,7 @@ func CreateCSSMeaning() *gotokenize.PatternMeaning {
 	}
 	meaning := gotokenize.CreateRawMeaning(tokenMap, false)
 	cssRawMeaning := NewCSSRawMeaning(meaning)
-	return gotokenize.NewPatternMeaning(cssRawMeaning, CSSPatterns, CSSIgnores, CSSGlobalNested)
+	return gotokenize.NewPatternMeaning(cssRawMeaning, CSSPatterns, CSSIgnores, CSSGlobalNested, gotokenize.NoTokens)
 }
 
 func (meaning *CSSRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {

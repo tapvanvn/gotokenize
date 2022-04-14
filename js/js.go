@@ -49,8 +49,10 @@ const (
 	TokenJSClassFunction      = 216
 	TokenJSObjectProperty     = 218
 	TokenJSObjectLastProperty = 219
+	TokenJSLabel              = 220
 
-	//TokenJSStrongBreak           = 300 //sure `;`
+	TokenJSStrongBreak = 300 //sure `;`
+
 	//TokenJSArgumentList          = 301 //use in function declaration and function call
 	//TokenJSStrongDeclareVariable = 302 //mark that the follow variable had been strong declared with `var` keyword
 	//TokenJSStrongDeclareConstant = 303 //mark that the follow variable had been strong declared with `const` keyword
@@ -61,8 +63,9 @@ const (
 	//TokenJSDeclareClass    = 352 //declare a class using class keyword
 	//TokenJSDeclareObject   = 353 //declare an object
 	//TokenJSDeclareArray    = 354 //declare an array using [] or new Array
-	TokenJSVoidStatement = 355 //any void(...) void ...
-	TokenJSOperatorTrail = 356
+	TokenJSVoidStatement   = 355 //any void(...) void ...
+	TokenJSOperatorTrail   = 356
+	TokenJSReturnStatement = 357
 )
 
 var JSTokenNameDictionary = map[int]string{
@@ -104,6 +107,7 @@ var JSTokenNameDictionary = map[int]string{
 	TokenJSFunctionLambda: "lambda",
 	TokenJSClass:          "class",
 	TokenJSClassFunction:  "class function",
+	TokenJSLabel:          "label",
 
 	TokenJSOperatorTrail:      "operator trail",
 	TokenJSObjectProperty:     "property",
@@ -111,6 +115,7 @@ var JSTokenNameDictionary = map[int]string{
 	TokenJSInlineIf:           "inline if",
 	TokenJSAssignVariable:     "assign variable",
 	TokenJSVoidStatement:      "void statement",
+	TokenJSReturnStatement:    "return statement",
 }
 
 //JSTokenName return name from type of token
@@ -132,7 +137,7 @@ var JSKeyWords string = `
 ,double,else,enum,eval,
 ,export,extends,false,final,finally,float,for,function,
 ,goto,if,implements,import,
-,in,instanceof,int,interface,
+,in,of,instanceof,int,interface,
 ,let,long,native,new,
 ,null,package,private,protected,
 ,public,return,short,static,
@@ -245,7 +250,9 @@ var JSPatternLevel2 = gotokenize.PatternMeaningDefine{
 	IgnoreTokens: gotokenize.NoTokens,
 	TokenCanNested: append(JSGlobalNested,
 		TokenJSAssignVariable,
-		TokenJSOperatorTrail),
+		TokenJSOperatorTrail,
+		TokenJSReturnStatement,
+	),
 	Patterns: []gotokenize.Pattern{
 		{
 			Type:                 TokenJSMinusPhrase,
@@ -453,6 +460,30 @@ var JSPatternLevel2 = gotokenize.PatternMeaningDefine{
 				{IsAny: true, CanNested: true},
 			},
 		},
+		{
+			Type:                 TokenJSFunctionLambda,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{IsAny: true, CanNested: true},
+				{
+					Type:      TokenJSPhrase,
+					CanNested: true,
+					Nested: []gotokenize.PatternToken{
+						{Type: TokenJSRightArrow},
+						{IsAny: true},
+					},
+				},
+			},
+		},
+
+		{
+			Type:                 TokenJSLabel,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Type: TokenJSWord},
+				{Type: TokenJSColonOperator},
+			},
+		},
 		/*{
 			Type:                 TokenJSAssignVariable,
 			IsRemoveGlobalIgnore: true,
@@ -465,8 +496,51 @@ var JSPatternLevel2 = gotokenize.PatternMeaningDefine{
 	},
 }
 
-var JSPatterns = []gotokenize.PatternMeaningDefine{
+var JSPatternLevel3 = gotokenize.PatternMeaningDefine{
+	IgnoreTokens: gotokenize.NoTokens,
+	TokenCanNested: append(JSGlobalNested,
+		TokenJSAssignVariable,
+		TokenJSOperatorTrail,
+		TokenJSFunction),
+	Patterns: []gotokenize.Pattern{
+		{
+			Type:                 TokenJSReturnStatement,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{Content: "return"},
+				{IsAny: true, CanNested: true},
+			},
+		},
+	},
+}
 
+var JSPatternLevelTest = gotokenize.PatternMeaningDefine{
+	IgnoreTokens: gotokenize.NoTokens,
+	TokenCanNested: append(JSGlobalNested,
+		TokenJSAssignVariable,
+		TokenJSOperatorTrail,
+		TokenJSFunction),
+	Patterns: []gotokenize.Pattern{
+		{
+			Type:                 TokenJSFunctionLambda,
+			IsRemoveGlobalIgnore: true,
+			Struct: []gotokenize.PatternToken{
+				{IsAny: true, CanNested: true},
+				{
+					Type:      TokenJSPhrase,
+					CanNested: true,
+					Nested: []gotokenize.PatternToken{
+						{Type: TokenJSRightArrow},
+						{IsAny: true},
+					},
+				},
+			},
+		},
+	},
+}
+
+var JSPatterns = []gotokenize.PatternMeaningDefine{
+	//JSPatternLevelTest,
 	JSPatternLevel1,
 	JSPatternLevel2,
 	//JSPatternLevel3,

@@ -9,6 +9,8 @@ import (
 )
 
 var file = flag.String("f", "complex.js", "input file")
+var printDebug = flag.Bool("d", false, "print debug")
+var printMeaningDebug = flag.Bool("m", false, "print meaning debug")
 
 func main() {
 	flag.Parse()
@@ -47,11 +49,15 @@ func main() {
 		if token == nil {
 			break
 		}
-		token.Debug(0, js.JSTokenName, js.JSDebugOptions)
+		if *printDebug {
+			token.Debug(0, js.JSTokenName, js.JSDebugOptions)
+		}
 		stringifer.PutToken(token)
 		token = meaning.Next(proc)
 	}
-	gotokenize.DebugMeaning(meaning)
+	if *printMeaningDebug {
+		gotokenize.DebugMeaning(meaning)
+	}
 
 	os.WriteFile("out.js", []byte(stringifer.Content), 0644)
 }

@@ -1,6 +1,8 @@
 package js
 
 import (
+	"fmt"
+
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
@@ -25,12 +27,14 @@ var jsBeautifyTokens = []int{
 	TokenJSClass,
 	TokenJSClassFunction,
 	TokenJSAssignVariable,
+	//TokenJSFunctionLambda,
 }
 
 func (meaning *JSInstructionMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
 	token := process.Iter.Read()
 	if token != nil {
+
 		if gotokenize.IsContainToken(jsBeautifyTokens, token.Type) {
 			if token.Children.Length() == 1 && token.Children.GetTokenAt(0).Type == TokenJSPhrase {
 
@@ -56,6 +60,9 @@ func (meaning *JSInstructionMeaning) Next(process *gotokenize.MeaningProcess) *g
 		} else if token.Type == TokenJSPhrase && token.Children.Length() == 1 {
 
 			*token = *token.Children.GetTokenAt(0)
+		}
+		if token.Type == TokenJSFunctionLambda {
+			meaning.processLambda(token)
 		}
 		if gotokenize.IsContainToken(JSInstructionGlobalNested, token.Type) {
 
@@ -83,6 +90,19 @@ func (meaning *JSInstructionMeaning) Next(process *gotokenize.MeaningProcess) *g
 	}
 
 	return token
+}
+
+func (meaning *JSInstructionMeaning) processLambda(token *gotokenize.Token) {
+	fmt.Println("process lambda")
+	if childToken := token.Children.GetTokenAt(1); childToken.Type == TokenJSPhrase {
+		if first := childToken.Children.GetTokenAt(0); first != nil && first.Content == "=>" && childToken.Children.Length() == 2 {
+			fmt.Println("here")
+			tmpStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
+			tmpStream.AddToken(*token.Children.GetTokenAt(0))
+			tmpStream.AddToken(*childToken.Children.GetTokenAt(1))
+			token.Children = tmpStream
+		}
+	}
 }
 
 func (meaning *JSInstructionMeaning) GetName() string {

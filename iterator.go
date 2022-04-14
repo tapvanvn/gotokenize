@@ -306,7 +306,8 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 						}
 					}
 				}
-				moveIter = 1 + patternToken.NumNextMoreAny
+
+				moveIter += 1 + patternToken.NumNextMoreAny
 			}
 			//if need to find
 			if match && len(patternToken.Nested) > 0 {
@@ -316,11 +317,13 @@ func (iterator *Iterator) FindPattern(patterns []Pattern, stopWhenFound bool, ig
 					match = false
 				} else {
 					childIter := currToken.Children.Iterator()
-					childMarks := childIter.FindPatternToken(0, &patternToken.Nested, ignoreTokens)
+					childMarks := childIter.FindPatternToken(currToken.Type, &patternToken.Nested, ignoreTokens)
 					if len(childMarks) == 0 {
 						match = false
 					}
 				}
+
+				moveIter += 1
 			}
 			if !match {
 

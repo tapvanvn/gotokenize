@@ -6,8 +6,9 @@ import (
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
-var requireBreakKeyWords = ",var,return,const,let,delete,"
-var requireSpaceKeyWords = ",typeof,new,catch,extends,instanceof"
+var requireBreakKeyWords = ",var,const,let,delete,throw,continue,"
+var requireSpaceKeyWords = ",typeof,new,catch,extends,instanceof,"
+var requireBreakNormalAfter = ",return,"
 
 type TokenStroke struct {
 	NeedSpace               bool //need space before
@@ -20,6 +21,7 @@ func (stroke *TokenStroke) ShouldSpace(current bool) bool {
 	return stroke.NeedSpace && !current
 }
 func (stroke *TokenStroke) ShouldStrongBreak(current bool) bool {
+	//fmt.Println("shoud:", stroke.NeedStrongBreak, current)
 	return stroke.NeedStrongBreak && !current
 }
 
@@ -53,6 +55,7 @@ type Stringifier struct {
 
 func (stringifier *Stringifier) put(content string, stroke *TokenStroke) {
 	if stroke.ShouldStrongBreak(stringifier.HasStrongBreak) {
+
 		stringifier.Content += ";"
 	} else if stroke.ShouldSpace(stringifier.HasSpace) {
 		stringifier.Content += ""
@@ -60,6 +63,7 @@ func (stringifier *Stringifier) put(content string, stroke *TokenStroke) {
 	stringifier.Content += content
 	stringifier.HasSpace = stroke.IsSpaceAfter
 	stringifier.HasStrongBreak = stroke.IsStrongBreakEquivalent
+	//fmt.Println("+ ", content, stroke.IsStrongBreakEquivalent)
 }
 
 func (stringifier *Stringifier) PutToken(token *gotokenize.Token) {
@@ -140,26 +144,46 @@ func (stringifier *Stringifier) PutToken(token *gotokenize.Token) {
 		} else if strings.Contains(requireSpaceKeyWords, ","+token.Content+",") {
 
 			stringifier.put(" "+token.Content+" ", &BreakAfterStroke)
+		} else if strings.Contains(requireBreakNormalAfter, ","+token.Content+",") {
+			stringifier.put(" "+token.Content+" ", &NeedBreakStroke)
 		} else {
 			stringifier.put(" "+token.Content+" ", &BreakAfterStroke)
 		}
 	case TokenJSBreak:
-		stringifier.put("break;", &NeedAndHasBreakStroke)
+		stringifier.put("break ", &NeedBreakStroke)
 	case TokenJSColonOperator:
 		stringifier.put(":", &BreakAfterStroke)
 	case TokenJSOperator:
 		stringifier.put(token.Content, &BreakAfterStroke)
 	case TokenJSUnaryOperator:
 		stringifier.put(token.Content, &BreakAfterStroke)
+	case TokenJSPhraseBreak:
+		break
+	case TokenJSStrongBreak:
+
+		stringifier.put(";", &BreakAfterStroke)
+	case TokenJSReturnStatement:
+		stringifier.PutReturnStatement(token)
+	case TokenJSLabel:
+		stringifier.PutLabel(token)
 	default:
 		if token.Content == "," {
 			stringifier.put(",", &BreakAfterStroke)
-
 		} else if token.Type == TokenJSLineComment || token.Type == TokenJSBlockComment {
 		} else {
 			stringifier.put(token.Content, &DefaultStroke)
 		}
 	}
+}
+
+func (stringifier *Stringifier) PutLabel(token *gotokenize.Token) {
+	stringifier.put("", &NeedAndHasBreakStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(0))
+
+	stringifier.put("", &BreakAfterStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(1))
+
+	stringifier.put("", &BreakAfterStroke)
 }
 func (stringifier *Stringifier) PutPhrase(token *gotokenize.Token) {
 
@@ -228,7 +252,11 @@ func (stringifier *Stringifier) PutOperatorTrail(token *gotokenize.Token) {
 	stringifier.PutStream(token.Children.Iterator())
 	stringifier.put("", &DefaultStroke)
 }
-
+func (stringifier *Stringifier) PutReturnStatement(token *gotokenize.Token) {
+	stringifier.put("", &NeedAndHasBreakStroke)
+	stringifier.PutStreamSpace(token.Children.Iterator())
+	stringifier.put("", &DefaultStroke)
+}
 func (stringifier *Stringifier) PutFor(token *gotokenize.Token) {
 	stringifier.put("for", &NeedAndHasBreakStroke)
 	stringifier.PutForBracket(token.Children.GetTokenAt(0))
@@ -236,32 +264,22 @@ func (stringifier *Stringifier) PutFor(token *gotokenize.Token) {
 	stringifier.PutToken(token.Children.GetTokenAt(1))
 	stringifier.put("", &DefaultStroke)
 }
+
+//TODO: improve this
 func (stringifier *Stringifier) PutForBracket(token *gotokenize.Token) {
 
 	stringifier.put("(", &BreakAfterStroke)
-	needBreak := token.Children.Length() > 2
+
 	iter := token.Children.Iterator()
-	stringifier.put("", &BreakAfterStroke)
-	i := 0
-	numChildren := token.Children.Length()
 	for {
 		childToken := iter.Read()
 
 		if childToken == nil {
 			break
 		}
-		if needBreak {
-			stringifier.put("", &BreakAfterStroke)
-			stringifier.PutToken(childToken)
-			if childToken.Type != TokenJSKeyWord && i < numChildren-1 {
-				stringifier.put(";", &BreakAfterStroke)
-			} else {
-				stringifier.put("", &BreakAfterStroke)
-			}
-		} else {
-			stringifier.PutStreamSpace(childToken.Children.Iterator())
-		}
-		i++
+		stringifier.put("", &BreakAfterStroke)
+		stringifier.PutToken(childToken)
+		stringifier.put("", &BreakAfterStroke)
 	}
 	stringifier.put(")", &DefaultStroke)
 }
@@ -297,11 +315,11 @@ func (stringifier *Stringifier) PutSwitch(token *gotokenize.Token) {
 				iter := childToken.Children.Iterator()
 				identity := iter.Read()
 				if identity.Type == TokenJSCase {
-					stringifier.put("case ", &BreakAfterStroke)
+					stringifier.put("case ", &NeedAndHasBreakStroke)
 					stringifier.PutStream(identity.Children.Iterator())
 					stringifier.put(":", &BreakAfterStroke)
 				} else if identity.Type == TokenJSDefault {
-					stringifier.put("default:", &BreakAfterStroke)
+					stringifier.put("default:", &NeedAndHasBreakStroke)
 				}
 				stringifier.PutStream(iter)
 			}
@@ -389,14 +407,19 @@ func (stringifier *Stringifier) PutBlock(token *gotokenize.Token) {
 }
 
 func (stringifier *Stringifier) PutInlineIf(token *gotokenize.Token) {
+
 	stringifier.put("", &NeedAndHasBreakStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(0))
 	stringifier.put("?", &BreakAfterStroke)
-	body := token.Children.GetTokenAt(2)
+	stringifier.PutToken(token.Children.GetTokenAt(2))
+	stringifier.put(":", &BreakAfterStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(4))
+	stringifier.put("", &DefaultStroke)
+	/*body := token.Children.GetTokenAt(2)
 	stringifier.PutToken(body.Children.GetTokenAt(0))
 	stringifier.put(":", &BreakAfterStroke)
 	stringifier.PutToken(body.Children.GetTokenAt(2))
-	stringifier.put("", &DefaultStroke)
+	stringifier.put("", &DefaultStroke)*/
 }
 
 func (stringifier *Stringifier) PutIf(token *gotokenize.Token) {
@@ -410,9 +433,10 @@ func (stringifier *Stringifier) PutIf(token *gotokenize.Token) {
 	stringifier.put("", &BreakAfterStroke)
 
 	if bodyPhrase != nil {
-		bodyPhrase.Debug(10, JSTokenName, JSDebugOptions)
+
 		stringifier.PutToken(bodyPhrase)
 		if bodyPhrase.Type != TokenJSBlock {
+
 			stringifier.put(";", &BreakAfterStroke)
 		} else {
 			stringifier.put("", &BreakAfterStroke)
