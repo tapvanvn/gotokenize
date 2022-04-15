@@ -2,82 +2,9 @@ package js
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/tapvanvn/gotokenize/v2"
 )
-
-var jsPhraseAllow = []int{
-	TokenJSWord,
-	TokenJSKeyWord,
-	TokenJSOperator,
-
-	TokenJSTreeDotOperator,
-	TokenJSAssign,
-	//TokenJSUnaryOperator,
-	//TokenJSBinaryOperator,
-
-	TokenJSQuestionOperator,
-	TokenJSColonOperator,
-
-	TokenJSRegex,
-	TokenJSString,
-
-	TokenJSVariable,
-	TokenJSBlock,
-	TokenJSBracket,
-	TokenJSBracketSquare,
-	TokenJSRightArrow,
-	TokenJSFunctionLambda,
-	TokenJSFunction,
-	TokenJSClass,
-	TokenJSReturnStatement,
-}
-
-var jsPhraseNext = []int{
-	TokenJSAssign,
-	//TokenJSQuestionOperator,
-	//TokenJSColonOperator,
-	//TokenJSBinaryOperator,
-	//TokenJSRightArrow,
-	//TokenJSQuestionOperator,
-	TokenJSColonOperator,
-}
-
-var jsPhraseBreakAfter = []int{
-	//TokenJSBracket,
-	//TokenJSBracketSquare,
-	//TokenJSBlock,
-}
-
-type JSPhraseContext struct {
-	InContextOfToken int
-}
-
-var jsPhraseBreakKeyWords string = `
-,abstract,arguments,await,boolean,
-,byte,case,catch,
-,char,class,const,continue,
-,debugger,default,delete,do,
-,double,else,enum,eval,
-,export,false,final,finally,float,for,function,
-,goto,if,implements,import,
-,int,interface,
-,let,long,native,
-,package,private,protected,
-,public,short,static,
-,super,switch,synchronized,
-,transient,true,
-,var,try,return,
-,volatile,while,with,yield,constructor,`
-
-func NewJSPhraseMeaning(baseMeaning gotokenize.IMeaning) *JSPhraseMeaning {
-
-	return &JSPhraseMeaning{
-
-		AbstractMeaning: gotokenize.NewAbtractMeaning(baseMeaning),
-	}
-}
 
 type JSPhraseMeaning struct {
 	*gotokenize.AbstractMeaning
@@ -85,10 +12,12 @@ type JSPhraseMeaning struct {
 
 func (meaning *JSPhraseMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
-	/*if len(process.Context.AncestorTokens) == 0 && process.Iter.Offset == 0 {
+	if len(process.Context.AncestorTokens) == 0 && process.Iter.Offset == 0 {
 		fmt.Print("\033[s") //save cursor the position
-	}*/
-	token := meaning.getNextMeaningToken(&process.Context, process.Iter)
+	}
+	stackPhraseToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
+
+	token := meaning.getNextMeaningToken(&process.Context, process.Iter, stackPhraseToken)
 
 	if token != nil {
 
@@ -107,9 +36,6 @@ func (meaning *JSPhraseMeaning) Next(process *gotokenize.MeaningProcess) *gotoke
 
 			*token = *token.Children.GetTokenAt(0)
 
-		} else if token.Children.Length() == 0 {
-
-			return meaning.getNextMeaningToken(&process.Context, process.Iter) //remove empty phrase
 		}
 		process.Context.PreviousToken = token.Type
 		process.Context.PreviousTokenContent = token.Content
@@ -119,18 +45,16 @@ func (meaning *JSPhraseMeaning) Next(process *gotokenize.MeaningProcess) *gotoke
 		process.Context.PreviousToken = gotokenize.TokenNoType
 		process.Context.PreviousTokenContent = ""
 	}
-	/*if len(process.Context.AncestorTokens) == 0 {
+
+	if len(process.Context.AncestorTokens) == 0 {
 		fmt.Print("\033[u\033[K") //restore
 		fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
 		fmt.Print("\033[A")
-	}*/
-	if token != nil {
-
-		//fmt.Printf("found:[%s]\tcontent:%s\tlevel:%d\n", JSTokenName(token.Type), token.Content, len(process.Context.AncestorTokens))
-
 	}
+
 	return token
 }
+
 func (meaning *JSPhraseMeaning) processChild(context *gotokenize.MeaningContext, parentToken *gotokenize.Token) {
 
 	if !gotokenize.IsContainToken(JSLevel2GlobalNested, parentToken.Type) {
@@ -152,164 +76,115 @@ func (meaning *JSPhraseMeaning) processChild(context *gotokenize.MeaningContext,
 	}
 	parentToken.Children = newStream
 }
-func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningContext, iter *gotokenize.Iterator) *gotokenize.Token {
 
-	meaning.continuePassPhraseBreak(context, iter)
+func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningContext,
+	iter *gotokenize.Iterator, stackToken *gotokenize.Token) *gotokenize.Token {
 
-	if token := iter.Read(); token != nil {
+	token := iter.Get()
+
+	for {
 
 		if token.Content == "for" {
 
-			meaning.nextFor(context, iter, token)
+			if stackToken.Children.Length() > 0 {
+				return stackToken
+			}
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
+			meaning.nextFor(context, iter, stackToken)
 
 		} else if token.Content == "do" {
 
-			meaning.nextDo(context, iter, token)
+			if stackToken.Children.Length() > 0 {
+				return stackToken
+			}
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
+			meaning.nextDo(context, iter, stackToken)
 
 		} else if token.Content == "while" {
 
-			meaning.nextWhile(context, iter, token)
+			if stackToken.Children.Length() > 0 {
+
+				return stackToken
+			}
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
+			meaning.nextWhile(context, iter, stackToken)
 
 		} else if token.Content == "if" {
 
-			meaning.nextIfTrail(context, iter, token)
+			if stackToken.Children.Length() > 0 {
 
-		} else if token.Content == "=>" { //lambda
-
-			meaning.nextLambdaBody(context, iter, token)
+				return stackToken
+			}
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
+			meaning.nextIfTrail(context, iter, stackToken)
 
 		} else if token.Content == "function" {
 
-			meaning.nextFunction(context, iter, token)
+			if stackToken.Children.Length() > 0 {
+				return stackToken
+			}
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
+			meaning.nextFunction(context, iter, stackToken)
 
 		} else if token.Content == "class" {
+			if stackToken.Children.Length() > 0 {
 
-			meaning.nextClass(context, iter, token)
+				return stackToken
+			}
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
+			meaning.nextClass(context, iter, stackToken)
 
 		} else if token.Content == "switch" {
+			if stackToken.Children.Length() > 0 {
 
-			meaning.nextSwitch(context, iter, token)
+				return stackToken
+			}
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
+			meaning.nextSwitch(context, iter, stackToken)
 
 		} else if token.Content == "try" {
 
-			meaning.nextTryCatch(context, iter, token)
+			if stackToken.Children.Length() > 0 {
 
-		} else if token.Content == "return" {
-
-			meaning.nextReturnStatement(context, iter, token)
-
-		} else if token.Type != TokenJSPhraseBreak &&
-			( //token.Type == TokenJSWord ||
-			token.Type != TokenJSAssign &&
-				token.Type != TokenJSColonOperator &&
-				token.Type != TokenJSQuestionOperator &&
-
-				gotokenize.IsContainToken(jsPhraseAllow, token.Type) &&
-				!gotokenize.IsContainToken(jsPhraseBreakAfter, token.Type) &&
-				!(token.Type == TokenJSKeyWord && strings.Contains(jsPhraseBreakKeyWords, ","+token.Content+","))) {
-
-			//fmt.Println("start phrase at", iter.Offset)
-			//fmt.Println("begin ", JSTokenName(token.Type), token.Content)
-			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
-			meaning.processChild(context, token)
-			tmpToken.Children.AddToken(*token)
-			meaning.continuePhrase(context, iter, tmpToken)
-
-			//fmt.Println("\t end phrase at", iter.Offset)
-			if tmpToken.Type == TokenJSPhrase {
-
-				if tmpToken.Children.Length() == 1 {
-
-					*tmpToken = *tmpToken.Children.GetTokenAt(0)
-
-				} else if tmpToken.Children.Length() == 0 {
-
-					return meaning.getNextMeaningToken(context, iter)
-				}
+				return stackToken
 			}
-			return tmpToken
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
+			meaning.nextTryCatch(context, iter, stackToken)
+		} else if token.Type == TokenJSPhraseBreak {
 
-		} else if token.Type == TokenJSPhraseBreak && token.Content != ";" {
+			if stackToken.Children.Length() > 0 {
 
-			return meaning.getNextMeaningToken(context, iter)
-
-		} else {
-
-			//fmt.Println("not in ", JSTokenName(token.Type), token.Content)
-		}
-		if token.Type == TokenJSPhrase && token.Children.Length() == 1 {
-
-			*token = *token.Children.GetTokenAt(0)
-		}
-		return token
-	}
-
-	return nil
-}
-
-func (meaning *JSPhraseMeaning) getNextNonPhraseToken(context *gotokenize.MeaningContext, iter *gotokenize.Iterator) (*gotokenize.Token, bool, int) {
-	processed := true
-	backupOffset := iter.Offset
-	fmt.Printf("start %s at %d\n", gotokenize.ColorContent("nonphrase"), iter.Offset)
-	if token := iter.Read(); token != nil {
-
-		if token.Content == "for" {
-
-			meaning.nextFor(context, iter, token)
-
-		} else if token.Content == "do" {
-
-			meaning.nextDo(context, iter, token)
-
-		} else if token.Content == "while" {
-
-			meaning.nextWhile(context, iter, token)
-
-		} else if token.Content == "if" {
-
-			meaning.nextIfTrail(context, iter, token)
+				return stackToken
+			}
+			_ = iter.Read()
+			return token
 
 		} else if token.Content == "=>" { //lambda
-
-			meaning.nextLambdaBody(context, iter, token)
+			_ = iter.Read()
+			meaning.nextLambdaBody(context, iter, stackToken)
 
 		} else if token.Type == TokenJSAssign {
-
-			meaning.nextAssign(context, iter, token)
-
-		} else if token.Content == "function" {
-
-			meaning.nextFunction(context, iter, token)
-
-		} else if token.Content == "class" {
-
-			meaning.nextClass(context, iter, token)
-
-		} else if token.Content == "switch" {
-
-			meaning.nextSwitch(context, iter, token)
-
-		} else if token.Content == "try" {
-
-			meaning.nextTryCatch(context, iter, token)
+			_ = iter.Read()
+			meaning.nextAssign(context, iter, stackToken)
 
 		} else if token.Content == "return" {
-
-			meaning.nextReturnStatement(context, iter, token)
-
+			_ = iter.Read()
+			meaning.nextReturnStatement(context, iter, stackToken)
 		} else {
-
-			processed = false
+			_ = iter.Read()
+			stackToken.Children.AddToken(*token)
 		}
-		if token.Type == TokenJSPhrase && token.Children.Length() == 1 {
-
-			*token = *token.Children.GetTokenAt(0)
-		}
-		fmt.Printf("\tend %s at %d %s:[%s]\n", gotokenize.ColorContent("nonphrase"), iter.Offset, JSTokenName(token.Type), token.Content)
-		return token, processed, backupOffset
 	}
 
-	return nil, false, backupOffset
+	return stackToken
 }
 
 func (meaning *JSPhraseMeaning) nextReturnStatement(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
@@ -509,16 +384,24 @@ func (meaning *JSPhraseMeaning) nextIfTrail(context *gotokenize.MeaningContext, 
 
 }
 
+func (meaing *JSPhraseMeaning) nextInlineIf(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
+	//continue read to meet ? then :
+}
+
 func (meaning *JSPhraseMeaning) nextLambdaBody(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
 
 	tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
-	tmpToken.Children.AddToken(*currentToken)                                        //=>
-	meaning.continuePassPhraseBreak(context, iter)                                   //remove empty phrase break
+	tmpToken.Children.AddToken(*currentToken)      //=>
+	meaning.continuePassPhraseBreak(context, iter) //remove empty phrase break
+
 	if nextToken := iter.Get(); nextToken != nil && nextToken.Type == TokenJSBlock { //body
+
 		meaning.processChild(context, nextToken)
 		tmpToken.Children.AddToken(*nextToken)
 		_ = iter.Read()
+
 	} else {
+
 		phrase := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
 		meaning.continuePhrase(context, iter, phrase)
 		tmpToken.Children.AddToken(*phrase)
@@ -689,94 +572,33 @@ func (meaning *JSPhraseMeaning) continuePassPhraseBreak(context *gotokenize.Mean
 
 //continuePhrase read until the phrase end or meet a block
 func (meaning *JSPhraseMeaning) continuePhrase(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
-	token, processed, backupOffset := meaning.getNextNonPhraseToken(context, iter)
 
-	_ = backupOffset
-	if processed && token != nil {
-		currentToken.Children.AddToken(*token)
-
-		return
-	}
-	iter.Seek(backupOffset)
 	for {
 
 		token := iter.Get()
 
 		if token == nil {
-			//*currentToken = *token
-			//return
-			//fmt.Println("\t\t\t\t restore1", backupOffset)
-			//iter.Seek(backup)
+
 			break
 		}
 
-		//Check if the phrase can continue when reach a phrase break
 		if token.Type == TokenJSPhraseBreak {
 			if lastToken := iter.GetBy(-1); lastToken == nil || lastToken.Type != TokenJSBinaryOperator {
 				if nextToken := iter.GetBy(1); nextToken == nil || nextToken.Type != TokenJSBinaryOperator {
 
-					//fmt.Println("\t token break", id)
-					//iter.Seek(backup)
-					//fmt.Println("\t\t\t\t restore2", backupOffset)
 					break
 				}
 			}
-			fmt.Println("====continue====")
-		} else if !gotokenize.IsContainToken(jsPhraseAllow, token.Type) {
-			//fmt.Println("\t token not allow", id)
-			//iter.Seek(backup)
-			//*currentToken = *token
-			//fmt.Println("\t\t\t\t restore3", backupOffset)
-			break
 		}
 		_ = iter.Read()
 		meaning.processChild(context, token)
 
-		//fmt.Println("\ton phrase:", id, JSTokenName(token.Type), token.Content)
+		currentToken.Children.AddToken(*token)
 
-		if gotokenize.IsContainToken(jsPhraseNext, token.Type) {
-
-			if currentToken.Type == TokenJSPhrase && currentToken.Children.Length() == 1 {
-
-				*currentToken = *currentToken.Children.GetTokenAt(0)
-			}
-
-			tmpContainerPhrase := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
-			tmpContainerPhrase.Children.AddToken(*currentToken)
-			tmpContainerPhrase.Children.AddToken(*token)
-
-			if childToken := meaning.getNextMeaningToken(context, iter); childToken != nil {
-
-				if childToken.Type != TokenJSPhrase { //prevent loop
-
-					meaning.processChild(context, childToken)
-				}
-				if childToken.Type == TokenJSPhrase && childToken.Children.Length() == 1 {
-
-					*childToken = *childToken.Children.GetTokenAt(0)
-				}
-				tmpContainerPhrase.Children.AddToken(*childToken)
-			}
-			if tmpContainerPhrase.Children.Length() == 1 {
-
-				*tmpContainerPhrase = *tmpContainerPhrase.Children.GetTokenAt(0)
-			}
-			//fmt.Println("\tpharese next", id)
-			*currentToken = *tmpContainerPhrase
-		} else {
-
-			currentToken.Children.AddToken(*token)
-		}
-		if gotokenize.IsContainToken(jsPhraseBreakAfter, token.Type) ||
-			(token.Type == TokenJSKeyWord && strings.Contains(jsPhraseBreakKeyWords, ","+token.Content+",")) {
-			//fmt.Println("\t break after", id)
-			break
-		}
 	}
 	if currentToken.Type == TokenJSPhrase && currentToken.Children.Length() == 1 {
 
 		*currentToken = *currentToken.Children.GetTokenAt(0)
-		//fmt.Println("\tminimize token", id, JSTokenName(currentToken.Type), currentToken.Content)
 	}
 }
 
