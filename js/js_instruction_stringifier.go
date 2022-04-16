@@ -458,5 +458,5 @@ func (stringifier *JSInstructionStringifier) PutString(token *gotokenize.Token) 
 	stringifier.put(token.Content, &DefaultStroke)
 }
 func (stringifier *JSInstructionStringifier) PutWord(token *gotokenize.Token) {
-	stringifier.put(token.Content, &DefaultSpaceStroke)
+	stringifier.put(token.Content, &NeedSpaceStroke)
 }

@@ -333,6 +333,7 @@ func (meaning *JSRawMeaning) getNextMeaningToken(context *gotokenize.MeaningCont
 
 		} else if token.Content == "." {
 
+			token.Type = TokenJSBinaryOperator
 			nextToken := iter.Get()
 			nextToken2 := iter.GetBy(1)
 			if nextToken != nil && nextToken2 != nil && nextToken.Content == "." && nextToken2.Content == "." {

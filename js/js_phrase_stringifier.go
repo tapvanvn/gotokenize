@@ -4,76 +4,45 @@ import (
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
-func NewDefaultPhraseStringifier() *JSPhraseStringifier {
+func NewDefaultPhraseStringifier() *Stringifier {
 
-	return &JSPhraseStringifier{
-
-		JSRawStringifier: NewDefaultRawStringifier(),
-	}
+	stringifier := NewDefaultRawStringifier()
+	stringifier.SetProcessor(TokenJSPhrase, ProcessPhrasePhrase)
+	stringifier.SetProcessor(TokenJSPhraseAssign, ProcessPhraseAssign)
+	stringifier.SetProcessor(TokenJSPhraseInlineIf, ProcessPhraseInlineIf)
+	stringifier.SetProcessor(TokenJSPhraseIfTrail, ProcessPhraseIfTrail)
+	stringifier.SetProcessor(TokenJSPhraseSwitch, ProcessPhraseSwitch)
+	stringifier.SetProcessor(TokenJSBreak, ProcessPhraseBreakStatement)
+	stringifier.SetProcessor(TokenJSPhraseDo, ProcessPhraseDo)
+	stringifier.SetProcessor(TokenJSPhraseFor, ProcessPhraseFor)
+	stringifier.SetProcessor(TokenJSPhraseWhile, ProcessPhraseWhile)
+	stringifier.SetProcessor(TokenJSPhraseTry, ProcessPhraseTry)
+	stringifier.SetProcessor(TokenJSPhraseLambda, ProcessPhraseLambda)
+	stringifier.SetProcessor(TokenJSPhraseFunction, ProcessPhraseFunction)
+	stringifier.SetProcessor(TokenJSPhraseClass, ProcessPhraseClass)
+	stringifier.SetProcessor(TokenJSPhraseClassFunction, ProcessPhraseClassFunction)
+	stringifier.SetProcessor(TokenJSBracket, ProcessPhraseBracket)
+	stringifier.SetProcessor(TokenJSBracketSquare, ProcessPhraseBracketSquare)
+	stringifier.SetProcessor(TokenJSBlock, ProcessPhraseBlock)
+	return stringifier
 }
 
-type JSPhraseStringifier struct {
-	*JSRawStringifier
+func ProcessPhraseBracket(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put("(", &BreakAfterStroke)
+	ProcessPhrasePhraseDefault(stringifier, token)
+	stringifier.put(")", &DefaultStroke)
 }
-
-func (stringifier *JSPhraseStringifier) PutToken(token *gotokenize.Token) {
-	if token == nil {
-		return
-	}
-	switch token.Type {
-	//phrase
-	case TokenJSPhrase:
-		stringifier.PutPhrase(token)
-	case TokenJSPhraseAssign:
-		stringifier.PutPhraseAssign(token)
-	case TokenJSPhraseBreak:
-		if token.Content == ";" {
-			stringifier.put(";", &BreakAfterStroke)
-		}
-		break
-	case TokenJSPhraseInlineIf:
-
-		stringifier.PutPhraseInlineIf(token)
-	case TokenJSPhraseIfTrail:
-		stringifier.PutPhraseIfTrail(token)
-	case TokenJSPhraseSwitch:
-		stringifier.PutPhraseSwitch(token)
-	case TokenJSBreak:
-		stringifier.PutBreakStatement(token)
-	case TokenJSPhraseDo:
-		stringifier.PutPhraseDo(token)
-	case TokenJSPhraseWhile:
-		stringifier.PutPhraseWhile(token)
-	case TokenJSPhraseFor:
-		stringifier.PutPhraseFor(token)
-	case TokenJSPhraseTry:
-		stringifier.PutPhraseTry(token)
-	case TokenJSPhraseLambda:
-		stringifier.PutPhraseLambda(token)
-	case TokenJSPhraseFunction:
-	case TokenJSPhraseClass:
-		stringifier.PutPhraseClass(token)
-	case TokenJSPhraseClassFunction:
-		stringifier.PutPhraseClassFunction(token)
-		//block
-	case TokenJSBracket:
-		stringifier.put("(", &BreakAfterStroke)
-		stringifier.PutPhraseDefault(token)
-		stringifier.put(")", &DefaultStroke)
-	case TokenJSBracketSquare:
-		stringifier.put("[", &BreakAfterStroke)
-		stringifier.PutPhraseDefault(token)
-		stringifier.put("]", &DefaultStroke)
-	case TokenJSBlock:
-		stringifier.put("{", &BreakAfterStroke)
-		stringifier.PutPhraseDefault(token)
-		stringifier.put("}", &DefaultStroke)
-
-	default:
-		stringifier.JSRawStringifier.PutToken(token)
-	}
+func ProcessPhraseBracketSquare(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put("[", &BreakAfterStroke)
+	ProcessPhrasePhraseDefault(stringifier, token)
+	stringifier.put("]", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutStream(iter *gotokenize.Iterator) {
+func ProcessPhraseBlock(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put("{", &BreakAfterStroke)
+	ProcessPhrasePhraseDefault(stringifier, token)
+	stringifier.put("}", &DefaultStroke)
+}
+func ProcessPhraseStream(stringifier *Stringifier, iter *gotokenize.Iterator) {
 	for {
 		token := iter.Read()
 		if token == nil {
@@ -82,7 +51,7 @@ func (stringifier *JSPhraseStringifier) PutStream(iter *gotokenize.Iterator) {
 		stringifier.PutToken(token)
 	}
 }
-func (stringifier *JSPhraseStringifier) PutStreamSpace(iter *gotokenize.Iterator) {
+func ProcessPhraseStreamSpace(stringifier *Stringifier, iter *gotokenize.Iterator) {
 	for {
 		token := iter.Read()
 		if token == nil {
@@ -92,23 +61,24 @@ func (stringifier *JSPhraseStringifier) PutStreamSpace(iter *gotokenize.Iterator
 		stringifier.PutToken(token)
 	}
 }
-func (stringifier *JSPhraseStringifier) PutPhrase(token *gotokenize.Token) {
+
+func ProcessPhrasePhrase(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("", &NeedAndHasBreakStroke)
-	stringifier.PutPhraseDefault(token)
+	ProcessPhrasePhraseSpacing(stringifier, token)
 	stringifier.put(" ", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutPhraseDefault(parentToken *gotokenize.Token) {
+func ProcessPhrasePhraseDefault(stringifier *Stringifier, parentToken *gotokenize.Token) {
 	iter := parentToken.Children.Iterator()
 	for {
 		token := iter.Read()
 		if token == nil {
 			break
 		}
-		stringifier.put("", &BreakAfterStroke)
 		stringifier.PutToken(token)
 	}
+	stringifier.put("", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutPhraseSpacing(parentToken *gotokenize.Token) {
+func ProcessPhrasePhraseSpacing(stringifier *Stringifier, parentToken *gotokenize.Token) {
 	iter := parentToken.Children.Iterator()
 	for {
 		token := iter.Read()
@@ -118,22 +88,25 @@ func (stringifier *JSPhraseStringifier) PutPhraseSpacing(parentToken *gotokenize
 		stringifier.put(" ", &BreakAfterStroke)
 		stringifier.PutToken(token)
 	}
+	stringifier.put("", &DefaultStroke)
 }
 
-func (stringifier *JSPhraseStringifier) PutPhraseAssign(token *gotokenize.Token) {
+func ProcessPhraseAssign(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("", &NeedAndHasBreakStroke)
-	stringifier.PutPhraseDefault(token)
+	stringifier.PutToken(token.Children.GetTokenAt(0))
+	stringifier.put("=", &BreakAfterStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(2))
 	stringifier.put("", &DefaultStroke)
 
 }
 
-func (stringifier *JSPhraseStringifier) PutPhraseInlineIf(token *gotokenize.Token) {
+func ProcessPhraseInlineIf(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("", &NeedAndHasBreakStroke)
-	stringifier.PutPhraseDefault(token)
+	ProcessPhrasePhraseDefault(stringifier, token)
 	stringifier.put("", &DefaultStroke)
 }
 
-func (stringifier *JSPhraseStringifier) PutPhraseIfTrail(token *gotokenize.Token) {
+func ProcessPhraseIfTrail(stringifier *Stringifier, token *gotokenize.Token) {
 	iter := token.Children.Iterator()
 	stringifier.put("if ", &NeedAndHasBreakStroke)
 	_ = iter.Read() //if
@@ -150,7 +123,7 @@ func (stringifier *JSPhraseStringifier) PutPhraseIfTrail(token *gotokenize.Token
 
 			stringifier.put(";", &BreakAfterStroke)
 		} else {
-			stringifier.put("", &BreakAfterStroke)
+			stringifier.put("", &DefaultStroke)
 		}
 	}
 
@@ -170,16 +143,15 @@ func (stringifier *JSPhraseStringifier) PutPhraseIfTrail(token *gotokenize.Token
 
 				stringifier.put(";", &BreakAfterStroke)
 			} else {
-				stringifier.put("", &BreakAfterStroke)
+				stringifier.put("", &DefaultStroke)
 			}
 		} else {
 			break
 		}
 	}
-
 }
 
-func (stringifier *JSPhraseStringifier) PutPhraseSwitch(token *gotokenize.Token) {
+func ProcessPhraseSwitch(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("switch ", &NeedAndHasBreakStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(1))
 	stringifier.put("{", &BreakAfterStroke)
@@ -196,69 +168,96 @@ func (stringifier *JSPhraseStringifier) PutPhraseSwitch(token *gotokenize.Token)
 				identity := iter.Read()
 				if identity.Type == TokenJSCase {
 					stringifier.put("case ", &NeedAndHasBreakStroke)
-					stringifier.PutStream(identity.Children.Iterator())
+					ProcessPhraseStream(stringifier, identity.Children.Iterator())
 					stringifier.put(":", &BreakAfterStroke)
 				} else if identity.Type == TokenJSDefault {
 					stringifier.put("default:", &NeedAndHasBreakStroke)
 				}
-				stringifier.PutStream(iter)
+				ProcessPhraseStream(stringifier, iter)
 			}
 		}
 	}
 	stringifier.put("}", &BreakAfterStroke)
 }
-func (stringifier *JSPhraseStringifier) PutBreakStatement(token *gotokenize.Token) {
+func ProcessPhraseBreakStatement(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("break ", &NeedAndHasBreakStroke)
-	stringifier.PutPhraseSpacing(token)
+	ProcessPhrasePhraseSpacing(stringifier, token)
 	stringifier.put("", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutPhraseFor(token *gotokenize.Token) {
+func ProcessPhraseFor(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("for(", &NeedAndHasBreakStroke)
-	stringifier.PutPhraseSpacing(token.Children.GetTokenAt(1))
+	ProcessPhrasePhraseSpacing(stringifier, token.Children.GetTokenAt(1))
 
 	stringifier.put(")", &BreakAfterStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(2))
 	stringifier.put("", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutPhraseDo(token *gotokenize.Token) {
-	stringifier.put("do", &NeedAndHasBreakStroke)
-	stringifier.PutToken(token.Children.GetTokenAt(1))
-	stringifier.put("while", &NeedAndHasBreakStroke)
+func ProcessPhraseDo(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put("do ", &NeedAndHasBreakStroke)
+	body := token.Children.GetTokenAt(1)
+	stringifier.PutToken(body)
+	if body.Type == TokenJSBlock {
+		stringifier.put("", &BreakAfterStroke)
+	}
+	stringifier.put("while ", &NeedAndHasBreakStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(3))
 	stringifier.put("", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutPhraseWhile(token *gotokenize.Token) {
-	stringifier.put("while", &NeedAndHasBreakStroke)
+func ProcessPhraseWhile(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put("while ", &NeedAndHasBreakStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(1))
 	stringifier.put("", &BreakAfterStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(2))
+	stringifier.put("", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutPhraseTry(token *gotokenize.Token) {
+func ProcessPhraseTry(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("", &NeedAndHasBreakStroke)
-	stringifier.PutPhraseDefault(token)
+	ProcessPhrasePhraseDefault(stringifier, token)
 	stringifier.put("", &DefaultStroke)
 
 }
-func (stringifier *JSPhraseStringifier) PutPhraseLambda(token *gotokenize.Token) {
-	stringifier.put("", &NeedAndHasBreakStroke)
-	stringifier.PutPhraseDefault(token)
+func ProcessPhraseLambda(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.PutToken(token.Children.GetTokenAt(0))
+	stringifier.put("=>", &BreakAfterStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(2))
+}
+func ProcessPhraseFunction(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put("function ", &NeedAndHasBreakStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(1))
+	stringifier.put("", &BreakAfterStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(2))
+	stringifier.put("", &BreakAfterStroke)
+	stringifier.PutToken(token.Children.GetTokenAt(3))
 	stringifier.put("", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutPhraseClass(token *gotokenize.Token) {
+func ProcessPhraseClass(stringifier *Stringifier, token *gotokenize.Token) {
 	iter := token.Children.Iterator()
 	iter.Read() //class
 	stringifier.put("class ", &NeedAndHasBreakStroke)
-	if next := iter.Get(); next != nil && next.Type == TokenJSWord {
+	if next := iter.Get(); next != nil && (next.Type == TokenJSWord || (next.Type == TokenJSKeyWord && next.Content == "extends")) {
 		iter.Read() //class name
 		stringifier.PutToken(next)
 		stringifier.put(" ", &BreakAfterStroke)
+		if next.Type == TokenJSWord {
+			if next2 := iter.Get(); next2 != nil && next2.Content == "extends" {
+				iter.Read() //class name
+				stringifier.PutToken(next)
+				stringifier.put(" ", &BreakAfterStroke)
+
+				stringifier.PutToken(iter.Read())
+				stringifier.put(" ", &BreakAfterStroke)
+			}
+		} else {
+			stringifier.PutToken(iter.Read())
+			stringifier.put(" ", &BreakAfterStroke)
+		}
 	}
 	stringifier.put("", &BreakAfterStroke)
 	stringifier.PutToken(iter.Read())
 	stringifier.put("", &DefaultStroke)
 }
-func (stringifier *JSPhraseStringifier) PutPhraseClassFunction(token *gotokenize.Token) {
+func ProcessPhraseClassFunction(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("", &NeedAndHasBreakStroke)
-	stringifier.PutPhraseDefault(token)
+	ProcessPhrasePhraseDefault(stringifier, token)
 	stringifier.put("", &DefaultStroke)
 }

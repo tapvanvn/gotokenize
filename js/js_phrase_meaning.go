@@ -73,7 +73,7 @@ func (meaning *JSPhraseMeaning) newStackToken() *gotokenize.Token {
 
 func (meaning *JSPhraseMeaning) processChild(context *gotokenize.MeaningContext, parentToken *gotokenize.Token) {
 
-	if !gotokenize.IsContainToken(JSLevel2GlobalNested, parentToken.Type) || parentToken.Type == TokenJSPhrase {
+	if !gotokenize.IsContainToken(JSLevel2GlobalNested, parentToken.Type) {
 
 		return
 	}
@@ -95,9 +95,14 @@ func (meaning *JSPhraseMeaning) processChild(context *gotokenize.MeaningContext,
 }
 func (meaning *JSPhraseMeaning) optimizePhrase(token *gotokenize.Token) *gotokenize.Token {
 
-	if token.Type == TokenJSPhrase && token.Children.Length() == 1 {
+	if token.Type == TokenJSPhrase {
+		if token.Children.Length() == 1 {
 
-		return token.Children.GetTokenAt(0)
+			return token.Children.GetTokenAt(0)
+		}
+	} else if token.Children.Length() == 1 && token.Children.GetTokenAt(0).Type == TokenJSPhrase {
+
+		token.Children = token.Children.GetTokenAt(0).Children
 	}
 	return token
 }
@@ -123,13 +128,11 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			meaning.continuePassPhraseBreak(context, iter)
 			if next := iter.Get(); next != nil && next.Type == TokenJSBracket {
 				_ = iter.Read()
-
 				meaning.processChild(context, next)
-				forPhrase.AddChild(*next)
+				forPhrase.AddChild(*meaning.optimizePhrase(next))
+
 				meaning.continuePassPhraseBreak(context, iter)
 				body := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-
-				meaning.processChild(context, body)
 				forPhrase.AddChild(*body)
 			}
 
@@ -146,7 +149,6 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			doPhrase.AddChild(*token)
 			meaning.continuePassPhraseBreak(context, iter)
 			body := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-			meaning.processChild(context, body)
 			doPhrase.AddChild(*body)
 			meaning.continuePassPhraseBreak(context, iter)
 			if next := iter.Get(); next != nil && next.Content == "while" {
@@ -156,7 +158,7 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 				if next := iter.Get(); next != nil && next.Type == TokenJSBracket {
 					_ = iter.Read()
 					meaning.processChild(context, next)
-					doPhrase.AddChild(*next)
+					doPhrase.AddChild(*meaning.optimizePhrase(next))
 				} else {
 					//error
 				}
@@ -178,10 +180,11 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			if next := iter.Get(); next != nil && next.Type == TokenJSBracket {
 				_ = iter.Read()
 				meaning.processChild(context, next)
-				whilePhrase.AddChild(*next)
+				whilePhrase.AddChild(*meaning.optimizePhrase(next))
+
 				meaning.continuePassPhraseBreak(context, iter)
 				body := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-				meaning.processChild(context, body)
+				//meaning.processChild(context, body)
 				whilePhrase.AddChild(*body)
 			} else {
 				//error
@@ -254,7 +257,7 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 
 			if stackToken.Children.Length() > 0 {
 
-				return stackToken
+				return meaning.optimizePhrase(stackToken)
 			}
 			_ = iter.Read()
 			return token
@@ -262,12 +265,13 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 		} else if token.Content == "=>" { //lambda
 			_ = iter.Read()
 			lambdaPhrase := meaning.newPhraseToken(TokenJSPhraseLambda)
-			meaning.processChild(context, stackToken)
+
 			lambdaPhrase.AddChild(*stackToken)
 
 			lambdaPhrase.AddChild(*token)
+
 			rightPart := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-			meaning.processChild(context, rightPart)
+
 			lambdaPhrase.AddChild(*rightPart)
 			return lambdaPhrase
 
@@ -275,7 +279,9 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 
 			_ = iter.Read()
 			assignPhrase := meaning.newPhraseToken(TokenJSPhraseAssign)
+
 			assignPhrase.AddChild(*stackToken)
+
 			assignPhrase.AddChild(*token)
 
 			rightPart := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
@@ -285,16 +291,17 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 		} else if token.Type == TokenJSQuestionOperator {
 			_ = iter.Read()
 			inlineIfPhrase := meaning.newPhraseToken(TokenJSPhraseInlineIf)
+
 			inlineIfPhrase.AddChild(*stackToken)
 			inlineIfPhrase.AddChild(*token)
 			firstPart := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-			meaning.processChild(context, firstPart)
+			//meaning.processChild(context, firstPart)
 			inlineIfPhrase.AddChild(*firstPart)
 			if next := iter.Get(); next != nil && next.Type == TokenJSColonOperator {
 				_ = iter.Read()
 				inlineIfPhrase.AddChild(*next)
 				secondPart := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-				meaning.processChild(context, firstPart)
+				//meaning.processChild(context, firstPart)
 				inlineIfPhrase.AddChild(*secondPart)
 			} else {
 				//TODO: error
@@ -317,7 +324,8 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 		} else {
 			_ = iter.Read()
 			meaning.processChild(context, token)
-			stackToken.Children.AddToken(*token)
+			stackToken.Children.AddToken(*meaning.optimizePhrase(token))
+
 		}
 	}
 
@@ -331,7 +339,7 @@ func (meaning *JSPhraseMeaning) nextReturnStatement(context *gotokenize.MeaningC
 		return
 	}
 	returnBody := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-	meaning.processChild(context, returnBody)
+
 	returnPhrase.AddChild(*returnBody)
 }
 
@@ -340,12 +348,12 @@ func (meaning *JSPhraseMeaning) nextIfTrail(context *gotokenize.MeaningContext, 
 	if next := iter.Get(); next != nil && next.Type == TokenJSBracket {
 		_ = iter.Read()
 		meaning.processChild(context, next)
-		ifPhrase.AddChild(*next)
+		ifPhrase.AddChild(*meaning.optimizePhrase(next))
 
 		meaning.continuePassPhraseBreak(context, iter)
 
 		body := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-		meaning.processChild(context, body)
+
 		ifPhrase.AddChild(*body)
 
 		for {
@@ -364,12 +372,12 @@ func (meaning *JSPhraseMeaning) nextIfTrail(context *gotokenize.MeaningContext, 
 					if next := iter.Get(); next != nil && next.Type == TokenJSBracket {
 						_ = iter.Read()
 						meaning.processChild(context, next)
-						ifPhrase.AddChild(*next)
+						ifPhrase.AddChild(*meaning.optimizePhrase(next))
 					}
 				}
 				meaning.continuePassPhraseBreak(context, iter)
 				body := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-				meaning.processChild(context, body)
+
 				ifPhrase.AddChild(*body)
 			} else {
 				break
@@ -400,10 +408,10 @@ func (meaning *JSPhraseMeaning) nextFunction(context *gotokenize.MeaningContext,
 	}
 	_ = iter.Read()
 	meaning.processChild(context, next)
-	funcPhrase.AddChild(*next)
+	funcPhrase.AddChild(*meaning.optimizePhrase(next))
 	meaning.continuePassPhraseBreak(context, iter)
 	body := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
-	meaning.processChild(context, body)
+
 	funcPhrase.AddChild(*body)
 }
 
@@ -414,10 +422,22 @@ func (meaning *JSPhraseMeaning) nextClass(context *gotokenize.MeaningContext, it
 	if next == nil {
 		return
 	}
-	if next.Type == TokenJSWord {
+	if next.Type == TokenJSWord || (next.Type == TokenJSKeyWord && next.Content == "extends") {
 		_ = iter.Read()
 		classPhrase.AddChild(*next)
 		meaning.continuePassPhraseBreak(context, iter)
+		if next.Type == TokenJSWord {
+			if next2 := iter.Get(); next2 != nil && next2.Content == "extends" {
+				_ = iter.Read()
+				classPhrase.AddChild(*next)
+				meaning.continuePassPhraseBreak(context, iter)
+				classPhrase.AddChild(*iter.Read()) //base class
+				meaning.continuePassPhraseBreak(context, iter)
+			}
+		} else {
+			classPhrase.AddChild(*iter.Read()) //base class
+			meaning.continuePassPhraseBreak(context, iter)
+		}
 		next = iter.Get()
 		if next == nil {
 			return
@@ -448,13 +468,13 @@ func (meaning *JSPhraseMeaning) nextClassBody(context *gotokenize.MeaningContext
 			meaning.continuePassPhraseBreak(context, iter)
 			if bracket := iter.Read(); bracket != nil {
 				meaning.processChild(context, bracket)
-				tmpToken.Children.AddToken(*bracket) //bracket
+				tmpToken.Children.AddToken(*meaning.optimizePhrase(bracket)) //bracket
 
 				meaning.continuePassPhraseBreak(context, iter)
 				if body := iter.Read(); body != nil {
 
 					meaning.processChild(context, body)
-					tmpToken.Children.AddToken(*body) //body
+					tmpToken.Children.AddToken(*meaning.optimizePhrase(body)) //body
 				}
 			}
 			tmpStream.AddToken(*tmpToken)
@@ -481,18 +501,18 @@ func (meaning *JSPhraseMeaning) nextTryCatch(context *gotokenize.MeaningContext,
 				if next := iter.Get(); next != nil && next.Type == TokenJSBracket {
 					_ = iter.Read()
 					meaning.processChild(context, next)
-					tryPhrase.AddChild(*next)
+					tryPhrase.AddChild(*meaning.optimizePhrase(next))
 					if next := iter.Get(); next != nil && next.Type == TokenJSBlock {
 						_ = iter.Read()
 						meaning.processChild(context, next)
-						tryPhrase.AddChild(*next)
+						tryPhrase.AddChild(*meaning.optimizePhrase(next))
 					}
 				}
 			} else {
 				if next := iter.Get(); next != nil && next.Type == TokenJSBlock {
 					_ = iter.Read()
 					meaning.processChild(context, next)
-					tryPhrase.AddChild(*next)
+					tryPhrase.AddChild(*meaning.optimizePhrase(next))
 				}
 				return
 			}
@@ -502,7 +522,7 @@ func (meaning *JSPhraseMeaning) nextTryCatch(context *gotokenize.MeaningContext,
 				if next := iter.Get(); next != nil && next.Type == TokenJSBlock {
 					_ = iter.Read()
 					meaning.processChild(context, next)
-					tryPhrase.AddChild(*next)
+					tryPhrase.AddChild(*meaning.optimizePhrase(next))
 				}
 			}
 		}
@@ -516,11 +536,12 @@ func (meaning *JSPhraseMeaning) nextSwitch(context *gotokenize.MeaningContext, i
 
 		_ = iter.Read()
 		meaning.processChild(context, next)
-		switchPhrase.AddChild(*next)
+		switchPhrase.AddChild(*meaning.optimizePhrase(next))
 
 		meaning.continuePassPhraseBreak(context, iter)
 		if next := iter.Get(); next != nil && next.Type == TokenJSBlock {
 			_ = iter.Read()
+
 			meaning.nextSwitchBody(context, next)
 			switchPhrase.AddChild(*next)
 		}
@@ -532,9 +553,8 @@ func (meaning *JSPhraseMeaning) nextSwitchBody(context *gotokenize.MeaningContex
 	tmpStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
 	var tmpPhrase *gotokenize.Token = nil
 	for {
-		meaning.continuePassPhraseBreak(context, iter) //remove empty phrase break
 
-		if token := iter.Get(); token != nil {
+		if token := iter.Read(); token != nil {
 
 			if token.Type == TokenJSCase || token.Type == TokenJSDefault {
 
@@ -547,7 +567,7 @@ func (meaning *JSPhraseMeaning) nextSwitchBody(context *gotokenize.MeaningContex
 
 			}
 			if tmpPhrase != nil {
-				_ = iter.Read()
+
 				tmpPhrase.Children.AddToken(*token)
 			}
 		} else {
@@ -569,38 +589,6 @@ func (meaning *JSPhraseMeaning) continuePassPhraseBreak(context *gotokenize.Mean
 			break
 		}
 		_ = iter.Read()
-	}
-}
-
-//continuePhrase read until the phrase end or meet a block
-func (meaning *JSPhraseMeaning) continuePhrase(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, currentToken *gotokenize.Token) {
-
-	for {
-
-		token := iter.Get()
-
-		if token == nil {
-
-			break
-		}
-
-		if token.Type == TokenJSPhraseBreak {
-			if lastToken := iter.GetBy(-1); lastToken == nil || lastToken.Type != TokenJSBinaryOperator {
-				if nextToken := iter.GetBy(1); nextToken == nil || nextToken.Type != TokenJSBinaryOperator {
-
-					break
-				}
-			}
-		}
-		_ = iter.Read()
-		meaning.processChild(context, token)
-
-		currentToken.Children.AddToken(*token)
-
-	}
-	if currentToken.Type == TokenJSPhrase && currentToken.Children.Length() == 1 {
-
-		*currentToken = *currentToken.Children.GetTokenAt(0)
 	}
 }
 

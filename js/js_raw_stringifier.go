@@ -6,49 +6,38 @@ import (
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
-func NewDefaultRawStringifier() *JSRawStringifier {
-	return &JSRawStringifier{
-		Stringifier: NewStringfier(),
+func NewDefaultRawStringifier() *Stringifier {
+
+	stringifier := NewStringfier()
+	stringifier.SetProcessor(TokenJSBracket, ProcessRawBracket)
+	stringifier.SetProcessor(TokenJSBlock, ProcessRawBlock)
+	stringifier.SetProcessor(TokenJSBracketSquare, ProcessRawBracketSquare)
+	stringifier.SetProcessor(TokenJSRegex, ProcessRawRegexToken)
+	stringifier.SetProcessor(TokenJSString, ProcessRawString)
+	stringifier.SetProcessor(TokenJSWord, ProcessRawWord)
+	stringifier.SetProcessor(TokenJSKeyWord, ProcessRawKeyWord)
+	stringifier.SetProcessor(TokenJSOperator, ProcessRawStrongOperator)
+	stringifier.SetProcessor(TokenJSUnaryOperator, ProcessRawStrongOperator)
+	stringifier.SetProcessor(TokenJSBinaryOperator, ProcessRawStrongOperator)
+	stringifier.SetProcessor(TokenJSQuestionOperator, ProcessRawStrongOperator)
+	stringifier.SetProcessor(TokenJSColonOperator, ProcessRawStrongOperator)
+	stringifier.SetProcessor(TokenJSSoftBreak, ProcessRawSoftOperator)
+	stringifier.SetProcessor(TokenJSPhraseBreak, ProcessRawPhraseBreak)
+	stringifier.SetProcessor(TokenJSStrongBreak, ProcessRawStrongBreak)
+	stringifier.SetNonTokenProcessor(ProcessNonToken)
+	return stringifier
+}
+
+func ProcessNonToken(stringifier *Stringifier, token *gotokenize.Token) {
+	if token.Content == "," {
+		stringifier.put(",", &BreakAfterStroke)
+	} else if token.Type == TokenJSLineComment || token.Type == TokenJSBlockComment {
+	} else {
+		stringifier.put(token.Content, &DefaultStroke)
 	}
 }
 
-type JSRawStringifier struct {
-	*Stringifier
-}
-
-func (stringifier *JSRawStringifier) PutToken(token *gotokenize.Token) {
-
-	switch token.Type {
-	case TokenJSBreak:
-		stringifier.PutBracket(token)
-	case TokenJSBracketSquare:
-		stringifier.PutBracketSquare(token)
-	case TokenJSBlock:
-		stringifier.PutBlock(token)
-	case TokenJSRegex:
-		stringifier.PutRegexToken(token)
-	case TokenJSString:
-		stringifier.PutString(token)
-	case TokenJSWord:
-		stringifier.PutWord(token)
-	case TokenJSPhraseBreak:
-		if token.Content == ";" {
-			stringifier.put(";", &BreakAfterStroke)
-		}
-		break
-	case TokenJSStrongBreak:
-		stringifier.put(";", &BreakAfterStroke)
-	default:
-		if token.Content == "," {
-			stringifier.put(",", &BreakAfterStroke)
-		} else if token.Type == TokenJSLineComment || token.Type == TokenJSBlockComment {
-		} else {
-			stringifier.put(token.Content, &DefaultStroke)
-		}
-	}
-}
-
-func (stringifier *JSRawStringifier) PutBlock(token *gotokenize.Token) {
+func ProcessRawBlock(stringifier *Stringifier, token *gotokenize.Token) {
 
 	stringifier.put("{", &BreakAfterStroke)
 	iter := token.Children.Iterator()
@@ -61,7 +50,7 @@ func (stringifier *JSRawStringifier) PutBlock(token *gotokenize.Token) {
 	}
 	stringifier.put("}", &BreakAfterStroke)
 }
-func (stringifier *JSRawStringifier) PutBracket(token *gotokenize.Token) {
+func ProcessRawBracket(stringifier *Stringifier, token *gotokenize.Token) {
 
 	stringifier.put("(", &BreakAfterStroke)
 
@@ -77,7 +66,7 @@ func (stringifier *JSRawStringifier) PutBracket(token *gotokenize.Token) {
 	}
 	stringifier.put(")", &DefaultStroke)
 }
-func (stringifier *JSRawStringifier) PutBracketSquare(token *gotokenize.Token) {
+func ProcessRawBracketSquare(stringifier *Stringifier, token *gotokenize.Token) {
 
 	stringifier.put("[", &BreakAfterStroke)
 
@@ -92,19 +81,20 @@ func (stringifier *JSRawStringifier) PutBracketSquare(token *gotokenize.Token) {
 	}
 	stringifier.put("]", &DefaultStroke)
 }
-func (stringifier *JSRawStringifier) PutRegexToken(token *gotokenize.Token) {
+
+func ProcessRawRegexToken(stringifier *Stringifier, token *gotokenize.Token) {
 
 	if token.Type == TokenJSBracket ||
 		token.Type == TokenJSBlock ||
 		token.Type == TokenJSBracketSquare {
-		stringifier.PutRegexBlockStyle(token)
+		ProcessRawRegexBlockStyle(stringifier, token)
 	} else if token.Type == TokenJSRegex {
-		stringifier.PutRegexStream(token)
+		ProcessRawRegexStream(stringifier, token)
 	} else {
 		stringifier.put(token.Content, &DefaultStroke)
 	}
 }
-func (stringifier *JSRawStringifier) PutRegexStream(parentToken *gotokenize.Token) {
+func ProcessRawRegexStream(stringifier *Stringifier, parentToken *gotokenize.Token) {
 
 	iter := parentToken.Children.Iterator()
 	for {
@@ -115,15 +105,15 @@ func (stringifier *JSRawStringifier) PutRegexStream(parentToken *gotokenize.Toke
 		if childToken.Type == TokenJSBracket ||
 			childToken.Type == TokenJSBlock ||
 			childToken.Type == TokenJSBracketSquare {
-			stringifier.PutRegexBlockStyle(childToken)
+			ProcessRawRegexBlockStyle(stringifier, childToken)
 		} else {
-			stringifier.PutRegexToken(childToken)
+			ProcessRawRegexToken(stringifier, childToken)
 		}
 	}
 }
-func (stringifier *JSRawStringifier) PutRegexBlockStyle(token *gotokenize.Token) {
+func ProcessRawRegexBlockStyle(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put(token.Content, &DefaultStroke)
-	stringifier.PutRegexStream(token)
+	ProcessRawRegexStream(stringifier, token)
 	if token.Type == TokenJSBracket {
 		stringifier.put(")", &DefaultStroke)
 	} else if token.Type == TokenJSBlock {
@@ -131,14 +121,39 @@ func (stringifier *JSRawStringifier) PutRegexBlockStyle(token *gotokenize.Token)
 	} else {
 		stringifier.put("]", &DefaultStroke)
 	}
-
 }
-
-func (stringifier *JSRawStringifier) PutString(token *gotokenize.Token) {
+func ProcessRawString(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put(token.Content, &DefaultStroke)
 	stringifier.put(token.Children.ConcatStringContent(), &DefaultStroke)
 	stringifier.put(token.Content, &DefaultStroke)
 }
-func (stringifier *JSRawStringifier) PutWord(token *gotokenize.Token) {
-	stringifier.put(token.Content, &DefaultSpaceStroke)
+func ProcessRawKeyWord(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put(token.Content, &NeedSpaceStroke)
+}
+func ProcessRawWord(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put(token.Content, &NeedSpaceStroke)
+}
+func ProcessRawOperator(stringifier *Stringifier, token *gotokenize.Token) {
+
+	stringifier.put(token.Content, &SpaceAfterStroke)
+}
+func ProcessRawStrongOperator(stringifier *Stringifier, token *gotokenize.Token) {
+
+	stringifier.put(token.Content, &BreakAfterStroke)
+}
+func ProcessRawSoftOperator(stringifier *Stringifier, token *gotokenize.Token) {
+
+	stringifier.put(token.Content, &BreakAfterStroke)
+}
+
+func ProcessRawPhraseBreak(stringifier *Stringifier, token *gotokenize.Token) {
+	if token.Content == ";" {
+		stringifier.put(";", &BreakAfterStroke)
+	} else {
+		stringifier.put("", &BreakAfterStroke)
+	}
+}
+func ProcessRawStrongBreak(stringifier *Stringifier, token *gotokenize.Token) {
+
+	stringifier.put(";", &BreakAfterStroke)
 }

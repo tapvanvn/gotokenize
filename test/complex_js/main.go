@@ -36,6 +36,7 @@ func main() {
 			stringifier = js.NewDefaultPhraseStringifier()
 		} else if flag.Arg(0) == "operator" {
 			meaning = js.NewDefaultJSOperatorMeaning()
+			stringifier = js.NewDefaultOperatorStringifier()
 		} else if flag.Arg(0) == "raw" {
 			meaning = js.NewDefaultJSRawMeaning()
 			stringifier = js.NewDefaultRawStringifier()
@@ -62,6 +63,8 @@ func main() {
 		gotokenize.DebugMeaning(meaning)
 	}
 
-	os.WriteFile("out.js", []byte(stringifier.GetContent()), 0644)
+	if err := os.WriteFile("out.js", []byte(stringifier.GetContent()), 0644); err != nil {
+		panic(err)
+	}
 
 }
