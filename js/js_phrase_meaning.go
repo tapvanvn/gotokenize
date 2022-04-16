@@ -262,7 +262,9 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 		} else if token.Content == "=>" { //lambda
 			_ = iter.Read()
 			lambdaPhrase := meaning.newPhraseToken(TokenJSPhraseLambda)
+			meaning.processChild(context, stackToken)
 			lambdaPhrase.AddChild(*stackToken)
+
 			lambdaPhrase.AddChild(*token)
 			rightPart := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
 			meaning.processChild(context, rightPart)
@@ -314,6 +316,7 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			return token
 		} else {
 			_ = iter.Read()
+			meaning.processChild(context, token)
 			stackToken.Children.AddToken(*token)
 		}
 	}

@@ -63,6 +63,7 @@ func (meaning *JSOperatorMeaning) getNextMeaningToken(context *gotokenize.Meanin
 
 	return nil
 }
+
 func (meaning *JSOperatorMeaning) processChild(context *gotokenize.MeaningContext, parentToken *gotokenize.Token) {
 
 	proc := gotokenize.NewMeaningProcessFromStream(append(context.AncestorTokens, parentToken.Type), &parentToken.Children)

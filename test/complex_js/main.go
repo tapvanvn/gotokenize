@@ -23,18 +23,22 @@ func main() {
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(string(data))
 	var meaning gotokenize.IMeaning = js.NewDefaultJSInstructionMeaning()
+	var stringifier gotokenize.IStringifier = js.NewDefaultInstructionStrigifier()
 
 	if flag.NArg() > 0 {
 		if flag.Arg(0) == "meaning" {
 			meaning = js.NewDefaultJSMeaning()
+
 		} else if flag.Arg(0) == "pattern" {
 			meaning = js.NewDefaultJSPatternMeaning()
 		} else if flag.Arg(0) == "phrase" {
 			meaning = js.NewDefaultJSPhraseMeaning()
+			stringifier = js.NewDefaultPhraseStringifier()
 		} else if flag.Arg(0) == "operator" {
 			meaning = js.NewDefaultJSOperatorMeaning()
 		} else if flag.Arg(0) == "raw" {
 			meaning = js.NewDefaultJSRawMeaning()
+			stringifier = js.NewDefaultRawStringifier()
 		}
 	}
 
@@ -44,7 +48,6 @@ func main() {
 
 	token := meaning.Next(proc)
 
-	stringifer := js.NewStringfier()
 	for {
 		if token == nil {
 			break
@@ -52,13 +55,13 @@ func main() {
 		if *printDebug {
 			token.Debug(0, js.JSTokenName, js.JSDebugOptions)
 		}
-		stringifer.PutToken(token)
+		stringifier.PutToken(token)
 		token = meaning.Next(proc)
 	}
 	if *printMeaningDebug {
 		gotokenize.DebugMeaning(meaning)
 	}
 
-	os.WriteFile("out.js", []byte(stringifer.Content), 0644)
+	os.WriteFile("out.js", []byte(stringifier.GetContent()), 0644)
 
 }

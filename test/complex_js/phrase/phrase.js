@@ -116,3 +116,11 @@ try {
 function a(b) {
     return b + 1;
 }
+
+////label
+function a(){
+    d:
+    if (b == c + e + f)  {
+     break d;
+    }
+}
