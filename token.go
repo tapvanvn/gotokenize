@@ -34,7 +34,10 @@ var EmptyDebugOption = &DebugOption{}
 func (token *Token) GetType() int {
 	return token.Type
 }
+func (token *Token) AddChild(childToken Token) {
 
+	token.Children.AddToken(childToken)
+}
 func (token *Token) GetContent() string {
 	return token.Content
 }

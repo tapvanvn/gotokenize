@@ -47,7 +47,10 @@ var a = [b, c, d]
 
 ////complex array
 var a = [()=> d, function(){d += 5}, {a : b}]
-
+////simple function
+function a(b,c,d) {
+    f = g
+}
 ////class welform
 class  b {
     constructor(a1,a2) {
@@ -81,9 +84,35 @@ switch (b) {
         a = [()=> d, function(){d += 5}, {a : b}]
         break;
     case 2:
+    case 3:
         a = b + c * d - (abc + f)
         break;
     default:
         b = d ? e : f
         break;
+}
+////fullform try
+try {
+    a = b
+} catch(ex) {
+    c()
+}finally{
+    a = d
+}
+////try with finnaly
+try {
+    a = b
+}finally{
+    a = d
+}
+////try catch
+try {
+    a = b
+} catch(ex) {
+    c()
+}
+
+////function with return
+function a(b) {
+    return b + 1;
 }

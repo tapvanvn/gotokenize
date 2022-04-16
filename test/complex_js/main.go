@@ -60,4 +60,5 @@ func main() {
 	}
 
 	os.WriteFile("out.js", []byte(stringifer.Content), 0644)
+
 }

@@ -31,6 +31,19 @@ const (
 	TokenJSMinusPhrase      = 115
 	TokenJSColonOperator    = 116
 
+	TokenJSPhraseFor           = 150
+	TokenJSPhraseDo            = 151
+	TokenJSPhraseWhile         = 152
+	TokenJSPhraseSwitch        = 153
+	TokenJSPhraseIfTrail       = 154 //if()...else if... else...
+	TokenJSPhraseInlineIf      = 155
+	TokenJSPhraseTry           = 156 //try{} catch(){} finally{}
+	TokenJSPhraseAssign        = 157
+	TokenJSPhraseLambda        = 158
+	TokenJSPhraseFunction      = 159
+	TokenJSPhraseClass         = 160
+	TokenJSPhraseClassFunction = 161
+
 	TokenJSFunction           = 200
 	TokenJSFunctionLambda     = 201
 	TokenJSVariable           = 202
@@ -109,6 +122,20 @@ var JSTokenNameDictionary = map[int]string{
 	TokenJSClassFunction:  "class function",
 	TokenJSLabel:          "label",
 
+	//phrase meaning
+	TokenJSPhraseFor:           "phrase for",
+	TokenJSPhraseDo:            "phrase do",
+	TokenJSPhraseWhile:         "phrase while",
+	TokenJSPhraseSwitch:        "phrase switch",
+	TokenJSPhraseIfTrail:       "phrase if trail",
+	TokenJSPhraseInlineIf:      "phrase inline if",
+	TokenJSPhraseTry:           "phrase try",
+	TokenJSPhraseAssign:        "phrase assign",
+	TokenJSPhraseLambda:        "phrase lambda",
+	TokenJSPhraseFunction:      "phrase function",
+	TokenJSPhraseClass:         "phrase class",
+	TokenJSPhraseClassFunction: "phrase class function",
+	//instruction
 	TokenJSOperatorTrail:      "operator trail",
 	TokenJSObjectProperty:     "property",
 	TokenJSObjectLastProperty: "property",
