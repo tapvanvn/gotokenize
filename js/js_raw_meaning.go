@@ -214,21 +214,32 @@ func (meaning *JSRawMeaning) getNextMeaningToken(context *gotokenize.MeaningCont
 		} else if token.Content == "&" { // &, &&
 
 			nextToken := iter.Get()
+			token.Type = TokenJSBinaryOperator
 			if nextToken.Content == "&" {
 				token.Content += "&"
 				_ = iter.Read()
+			} else if nextToken.Content == "=" {
+				token.Content += "="
+				token.Type = TokenJSAssign
+				_ = iter.Read()
 			}
-			token.Type = TokenJSBinaryOperator
+
 			return token
 
 		} else if token.Content == "|" { // |, ||
 			nextToken := iter.Get()
+			token.Type = TokenJSBinaryOperator
 			if nextToken.Content == "|" {
 				token.Content += "|"
 				_ = iter.Read()
+			} else if nextToken.Content == "=" {
+				token.Content += "="
+				token.Type = TokenJSAssign
+				_ = iter.Read()
 			}
-			token.Type = TokenJSBinaryOperator
+
 			return token
+
 		} else if token.Content == "+" {
 			tmpToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSBinaryOperator, "+")
 			if nextToken := iter.Get(); nextToken != nil {
@@ -299,10 +310,16 @@ func (meaning *JSRawMeaning) getNextMeaningToken(context *gotokenize.MeaningCont
 				if nextToken.Content == ">" {
 					tmpToken.Content += ">"
 					_ = iter.Read()
-					if nextToken2 := iter.Get(); nextToken2 != nil && nextToken2.Content == ">" {
-						tmpToken.Content += ">"
-						tmpToken.Type = TokenJSAssign
-						_ = iter.Read()
+					if nextToken2 := iter.Get(); nextToken2 != nil {
+						if nextToken2.Content == ">" {
+							tmpToken.Content += ">"
+							tmpToken.Type = TokenJSBinaryOperator
+							_ = iter.Read()
+						} else if nextToken2.Content == "=" {
+							tmpToken.Content += "="
+							tmpToken.Type = TokenJSBinaryOperator
+							_ = iter.Read()
+						}
 					}
 				} else if nextToken.Content == "=" {
 					tmpToken.Content += "="
@@ -318,10 +335,16 @@ func (meaning *JSRawMeaning) getNextMeaningToken(context *gotokenize.MeaningCont
 				if nextToken.Content == "<" {
 					tmpToken.Content += "<"
 					_ = iter.Read()
-					if nextToken2 := iter.Get(); nextToken2 != nil && nextToken2.Content == "<" {
-						tmpToken.Content += "<"
-						tmpToken.Type = TokenJSAssign
-						_ = iter.Read()
+					if nextToken2 := iter.Get(); nextToken2 != nil {
+						if nextToken2.Content == "<" {
+							tmpToken.Content += "<"
+							tmpToken.Type = TokenJSBinaryOperator
+							_ = iter.Read()
+						} else if nextToken2.Content == "=" {
+							tmpToken.Content += "="
+							tmpToken.Type = TokenJSBinaryOperator
+							_ = iter.Read()
+						}
 					}
 				} else if nextToken.Content == "=" {
 					tmpToken.Content += "="

@@ -272,6 +272,7 @@ func TestJSMeaning(t *testing.T) {
 	gotokenize.DebugMeaning(meaning)
 }
 
+/*
 func TestJSInstructionMeaning(t *testing.T) {
 	content := `
 	for (var name in all)
@@ -297,3 +298,4 @@ func TestJSInstructionMeaning(t *testing.T) {
 	}
 	gotokenize.DebugMeaning(meaning)
 }
+*/

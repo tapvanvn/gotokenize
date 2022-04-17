@@ -22,15 +22,15 @@ func main() {
 
 	stream := gotokenize.CreateStream(0)
 	stream.Tokenize(string(data))
-	var meaning gotokenize.IMeaning = js.NewDefaultJSInstructionMeaning()
-	var stringifier gotokenize.IStringifier = js.NewDefaultInstructionStrigifier()
+	var meaning gotokenize.IMeaning = js.NewDefaultJSOperatorMeaning()
+	var stringifier gotokenize.IStringifier = js.NewDefaultOperatorStringifier()
 
 	if flag.NArg() > 0 {
 		if flag.Arg(0) == "meaning" {
 			meaning = js.NewDefaultJSMeaning()
 
-		} else if flag.Arg(0) == "pattern" {
-			meaning = js.NewDefaultJSPatternMeaning()
+			//} else if flag.Arg(0) == "pattern" {
+			//	meaning = js.NewDefaultJSPatternMeaning()
 		} else if flag.Arg(0) == "phrase" {
 			meaning = js.NewDefaultJSPhraseMeaning()
 			stringifier = js.NewDefaultPhraseStringifier()

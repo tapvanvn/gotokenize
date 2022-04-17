@@ -24,6 +24,7 @@ func NewDefaultPhraseStringifier() *Stringifier {
 	stringifier.SetProcessor(TokenJSBracket, ProcessPhraseBracket)
 	stringifier.SetProcessor(TokenJSBracketSquare, ProcessPhraseBracketSquare)
 	stringifier.SetProcessor(TokenJSBlock, ProcessPhraseBlock)
+	stringifier.SetProcessor(TokenJSReturnStatement, ProcessPhraseReturnStatement)
 	return stringifier
 }
 
@@ -94,7 +95,7 @@ func ProcessPhrasePhraseSpacing(stringifier *Stringifier, parentToken *gotokeniz
 func ProcessPhraseAssign(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("", &NeedAndHasBreakStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(0))
-	stringifier.put("=", &BreakAfterStroke)
+	stringifier.put(token.Children.GetTokenAt(1).Content, &BreakAfterStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(2))
 	stringifier.put("", &DefaultStroke)
 
@@ -123,7 +124,7 @@ func ProcessPhraseIfTrail(stringifier *Stringifier, token *gotokenize.Token) {
 
 			stringifier.put(";", &BreakAfterStroke)
 		} else {
-			stringifier.put("", &DefaultStroke)
+			stringifier.put("", &BreakAfterStroke)
 		}
 	}
 
@@ -143,7 +144,7 @@ func ProcessPhraseIfTrail(stringifier *Stringifier, token *gotokenize.Token) {
 
 				stringifier.put(";", &BreakAfterStroke)
 			} else {
-				stringifier.put("", &DefaultStroke)
+				stringifier.put("", &BreakAfterStroke)
 			}
 		} else {
 			break
@@ -163,31 +164,35 @@ func ProcessPhraseSwitch(stringifier *Stringifier, token *gotokenize.Token) {
 			if childToken == nil {
 				break
 			}
-			if childToken.Type == TokenJSPhrase {
-				iter := childToken.Children.Iterator()
-				identity := iter.Read()
-				if identity.Type == TokenJSCase {
-					stringifier.put("case ", &NeedAndHasBreakStroke)
-					ProcessPhraseStream(stringifier, identity.Children.Iterator())
-					stringifier.put(":", &BreakAfterStroke)
-				} else if identity.Type == TokenJSDefault {
-					stringifier.put("default:", &NeedAndHasBreakStroke)
-				}
-				ProcessPhraseStream(stringifier, iter)
+
+			if childToken.Type == TokenJSCase {
+				stringifier.put("case ", &NeedAndHasBreakStroke)
+				ProcessPhraseStream(stringifier, childToken.Children.Iterator())
+				stringifier.put(":", &BreakAfterStroke)
+			} else if childToken.Type == TokenJSDefault {
+				stringifier.put("default:", &NeedAndHasBreakStroke)
 			}
+			stringifier.PutToken(iter.Read())
+
 		}
 	}
 	stringifier.put("}", &BreakAfterStroke)
 }
 func ProcessPhraseBreakStatement(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("break ", &NeedAndHasBreakStroke)
-	ProcessPhrasePhraseSpacing(stringifier, token)
+	ProcessPhrasePhraseDefault(stringifier, token)
+	stringifier.put("", &DefaultStroke)
+}
+func ProcessPhraseReturnStatement(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put("return ", &NeedAndHasBreakStroke)
+	iter := token.Children.Iterator()
+	iter.Read()
+	ProcessPhraseStream(stringifier, iter)
 	stringifier.put("", &DefaultStroke)
 }
 func ProcessPhraseFor(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("for(", &NeedAndHasBreakStroke)
-	ProcessPhrasePhraseSpacing(stringifier, token.Children.GetTokenAt(1))
-
+	ProcessPhrasePhraseDefault(stringifier, token.Children.GetTokenAt(1))
 	stringifier.put(")", &BreakAfterStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(2))
 	stringifier.put("", &DefaultStroke)
@@ -220,6 +225,12 @@ func ProcessPhraseLambda(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.PutToken(token.Children.GetTokenAt(0))
 	stringifier.put("=>", &BreakAfterStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(2))
+	if token.Children.GetTokenAt(2).Type == TokenJSBlock {
+		stringifier.put("", &BreakAfterStroke)
+	} else {
+		stringifier.put("", &DefaultStroke)
+	}
+
 }
 func ProcessPhraseFunction(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("function ", &NeedAndHasBreakStroke)

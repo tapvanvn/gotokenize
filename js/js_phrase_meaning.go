@@ -116,9 +116,17 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			break
 		}
 		//fmt.Println(token.Content)
+		if token.Type == TokenJSBlock {
+			if stackToken.Children.Length() == 0 {
+				_ = iter.Read()
+				meaning.processChild(context, token)
+				return meaning.optimizePhrase(token)
+			}
+		}
 		if token.Content == "for" {
 
 			if stackToken.Children.Length() > 0 {
+
 				return meaning.optimizePhrase(stackToken)
 			}
 
@@ -313,7 +321,8 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			_ = iter.Read()
 			returnPhrase.AddChild(*token)
 			meaning.nextReturnStatement(context, iter, returnPhrase)
-			return returnPhrase
+			return meaning.optimizePhrase(returnPhrase)
+
 		} else if token.Type == TokenJSColonOperator {
 
 			if stackToken.Children.Length() > 0 {
@@ -334,7 +343,6 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 
 func (meaning *JSPhraseMeaning) nextReturnStatement(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, returnPhrase *gotokenize.Token) {
 
-	meaning.continuePassPhraseBreak(context, iter)
 	if next := iter.Get(); next != nil && next.Type == TokenJSPhraseBreak {
 		return
 	}
@@ -364,6 +372,7 @@ func (meaning *JSPhraseMeaning) nextIfTrail(context *gotokenize.MeaningContext, 
 				ifPhrase.AddChild(*next)
 
 				meaning.continuePassPhraseBreak(context, iter)
+
 				if next := iter.Get(); next != nil && next.Content == "if" {
 
 					_ = iter.Read()
@@ -376,6 +385,8 @@ func (meaning *JSPhraseMeaning) nextIfTrail(context *gotokenize.MeaningContext, 
 					}
 				}
 				meaning.continuePassPhraseBreak(context, iter)
+				//if next := iter.Get(); next != nil && next.Type == TokenJSBlock {
+				//	_ = iter.Read()
 				body := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
 
 				ifPhrase.AddChild(*body)
@@ -457,15 +468,22 @@ func (meaning *JSPhraseMeaning) nextClassBody(context *gotokenize.MeaningContext
 	tmpStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
 	for {
 		meaning.continuePassPhraseBreak(context, iter) //remove empty phrase break
-		funcName := iter.Read()
-		if funcName != nil &&
-			((funcName.Type == TokenJSKeyWord && funcName.Content == "constructor") ||
-				funcName.Type == TokenJSWord) {
+		first := iter.Read()
+		if first != nil &&
+			(first.Type == TokenJSWord ||
+				(first.Type == TokenJSKeyWord && (first.Content == "constructor" || first.Content == "static"))) {
 
 			tmpToken := meaning.newPhraseToken(TokenJSPhraseClassFunction)
-			tmpToken.Children.AddToken(*funcName)
+			tmpToken.Children.AddToken(*first)
 
 			meaning.continuePassPhraseBreak(context, iter)
+			if first.Content == "static" {
+				if second := iter.Get(); second != nil && second.Type == TokenJSWord {
+					tmpToken.Children.AddToken(*second)
+					iter.Read()
+				}
+			}
+
 			if bracket := iter.Read(); bracket != nil {
 				meaning.processChild(context, bracket)
 				tmpToken.Children.AddToken(*meaning.optimizePhrase(bracket)) //bracket
@@ -543,7 +561,7 @@ func (meaning *JSPhraseMeaning) nextSwitch(context *gotokenize.MeaningContext, i
 			_ = iter.Read()
 
 			meaning.nextSwitchBody(context, next)
-			switchPhrase.AddChild(*next)
+			switchPhrase.AddChild(*meaning.optimizePhrase(next))
 		}
 	}
 }
@@ -554,30 +572,30 @@ func (meaning *JSPhraseMeaning) nextSwitchBody(context *gotokenize.MeaningContex
 	var tmpPhrase *gotokenize.Token = nil
 	for {
 
-		if token := iter.Read(); token != nil {
+		token := iter.Read()
+		if token == nil {
+			break
+		}
 
-			if token.Type == TokenJSCase || token.Type == TokenJSDefault {
+		if token.Type == TokenJSCase || token.Type == TokenJSDefault {
 
-				if tmpPhrase != nil {
-
-					meaning.processChild(context, tmpPhrase)
-					tmpStream.AddToken(*tmpPhrase)
-				}
-				tmpPhrase = gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
-
-			}
 			if tmpPhrase != nil {
 
-				tmpPhrase.Children.AddToken(*token)
+				meaning.processChild(context, tmpPhrase)
+				tmpStream.AddToken(*meaning.optimizePhrase(tmpPhrase))
 			}
-		} else {
-			break
+			tmpPhrase = gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
+			tmpStream.AddToken(*token)
+
+		} else if tmpPhrase != nil {
+
+			tmpPhrase.Children.AddToken(*meaning.optimizePhrase(token))
 		}
 	}
 	if tmpPhrase != nil {
 
 		meaning.processChild(context, tmpPhrase)
-		tmpStream.AddToken(*tmpPhrase)
+		tmpStream.AddToken(*meaning.optimizePhrase(tmpPhrase))
 	}
 	switchBlock.Children = tmpStream
 }

@@ -91,6 +91,16 @@ switch (b) {
         b = d ? e : f
         break;
 }
+////switch with block
+switch (b) {
+    case 1:{
+            t=d
+        }
+    case 2:{}
+        break;
+    default:
+        break;
+}
 ////fullform try
 try {
     a = b

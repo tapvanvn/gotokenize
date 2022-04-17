@@ -22,6 +22,7 @@ var operatorNestedToken = append(JSGlobalNested,
 	TokenJSPhraseLambda,
 	TokenJSPhraseInlineIf,
 	TokenJSPhraseSwitch,
+	TokenJSReturnStatement,
 )
 
 func NewJSOperatorMeaning(baseMeaning gotokenize.IMeaning) *JSOperatorMeaning {
