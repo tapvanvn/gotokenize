@@ -18,6 +18,7 @@ type MeaningContext struct {
 	AncestorTokens       []int
 	PreviousToken        int
 	PreviousTokenContent string
+	BindingData          interface{}
 }
 
 func NewAbtractMeaning(base IMeaning) *AbstractMeaning {
