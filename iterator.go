@@ -88,7 +88,7 @@ func (iterator *Iterator) Get() *Token {
 //GetBy get token at (offset + iterator) position
 func (iterator *Iterator) GetBy(iter int) *Token {
 
-	if iterator.Offset+iter <= len(iterator.Stream.Tokens)-1 {
+	if iterator.Offset+iter > -1 && iterator.Offset+iter <= len(iterator.Stream.Tokens)-1 {
 
 		off := iterator.Offset + iter
 

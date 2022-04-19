@@ -63,6 +63,7 @@ const (
 	TokenJSObjectProperty     = 218
 	TokenJSObjectLastProperty = 219
 	TokenJSLabel              = 220
+	TokenJSContinue           = 221
 
 	TokenJSStrongBreak = 300 //sure `;`
 
@@ -218,23 +219,7 @@ var JSGlobalNested = []int{
 	TokenJSMinusPhrase,
 }
 
-//JSPatternOperator the patterns to detect instruction structure
-var JSPatternOperator = gotokenize.PatternMeaningDefine{
-	IgnoreTokens:   gotokenize.NoTokens,
-	TokenCanNested: JSGlobalNested,
-	Patterns: []gotokenize.Pattern{
-		//Inline If
-		{
-			Type:                 TokenJSPhrase,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Type: TokenJSBinaryOperator},
-			},
-		},
-	},
-}
-
-var JSLevel2GlobalNested = append(
+var JSPhraseGlobalNested = append(
 	JSGlobalNested,
 	TokenJSOperatorTrail,
 	TokenJSSwitch,
@@ -251,28 +236,40 @@ var JSLevel2GlobalNested = append(
 	TokenJSAssignVariable,
 )
 
-var JSInstructionGlobalNested = append(
-	JSLevel2GlobalNested,
+var JSPatternGlobalNested = append(
+	JSPhraseGlobalNested,
 	TokenJSInlineIf,
+	TokenJSPhraseFor,
+	TokenJSPhraseDo,
+	TokenJSPhraseWhile,
+	TokenJSPhraseSwitch,
+	TokenJSPhraseIfTrail,
+	TokenJSPhraseInlineIf,
+	TokenJSPhraseTry,
+	TokenJSPhraseAssign,
+	TokenJSPhraseLambda,
+	TokenJSPhraseFunction,
+	TokenJSPhraseClass,
+	TokenJSPhraseClassFunction,
 )
 
 var JSPatternLevel1 = gotokenize.PatternMeaningDefine{
 	IgnoreTokens:      gotokenize.NoTokens,
-	TokenCanNested:    JSGlobalNested,
+	TokenCanNested:    JSPatternGlobalNested,
 	PreventLoopTokens: []int{TokenJSAssignVariable},
 	Patterns: []gotokenize.Pattern{
 		{
-			Type:                 TokenJSAssignVariable,
+			Type:                 TokenJSLabel,
 			IsRemoveGlobalIgnore: true,
 			Struct: []gotokenize.PatternToken{
-				{IsAny: true, CanNested: true},
-				{Type: TokenJSAssign},
-				{IsAny: true, CanNested: true},
+				{Type: TokenJSWord},
+				{Type: TokenJSColonOperator},
 			},
 		},
 	},
 }
 
+/*
 var JSPatternLevel2 = gotokenize.PatternMeaningDefine{
 	IgnoreTokens: gotokenize.NoTokens,
 	TokenCanNested: append(JSGlobalNested,
@@ -511,33 +508,6 @@ var JSPatternLevel2 = gotokenize.PatternMeaningDefine{
 				{Type: TokenJSColonOperator},
 			},
 		},
-		/*{
-			Type:                 TokenJSAssignVariable,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{IsAny: true, CanNested: true},
-				{Type: TokenJSAssign},
-				{IsAny: true, CanNested: true},
-			},
-		},*/
-	},
-}
-
-var JSPatternLevel3 = gotokenize.PatternMeaningDefine{
-	IgnoreTokens: gotokenize.NoTokens,
-	TokenCanNested: append(JSGlobalNested,
-		TokenJSAssignVariable,
-		TokenJSOperatorTrail,
-		TokenJSFunction),
-	Patterns: []gotokenize.Pattern{
-		{
-			Type:                 TokenJSReturnStatement,
-			IsRemoveGlobalIgnore: true,
-			Struct: []gotokenize.PatternToken{
-				{Content: "return"},
-				{IsAny: true, CanNested: true},
-			},
-		},
 	},
 }
 
@@ -565,11 +535,12 @@ var JSPatternLevelTest = gotokenize.PatternMeaningDefine{
 		},
 	},
 }
+*/
 
 var JSPatterns = []gotokenize.PatternMeaningDefine{
 	//JSPatternLevelTest,
 	JSPatternLevel1,
-	JSPatternLevel2,
+	//JSPatternLevel2,
 	//JSPatternLevel3,
 	//JSPatternLevel4,
 }

@@ -7,7 +7,7 @@ import (
 )
 
 var notOperatorTrail = ",:,,,"
-var startOperatorKeywords = ",var,let,this,typeof,"
+var startOperatorKeywords = ",var,let,this,typeof,throw,new,delete,continue,"
 
 var operatorNestedToken = append(JSGlobalNested,
 	TokenJSPhraseAssign,

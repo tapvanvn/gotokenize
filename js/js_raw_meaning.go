@@ -386,6 +386,9 @@ func (meaning *JSRawMeaning) getNextMeaningToken(context *gotokenize.MeaningCont
 		} else if token.Content == "break" {
 			token.Type = TokenJSBreak
 			token.Content = ""
+		} else if token.Content == "continue" {
+			token.Type = TokenJSContinue
+			token.Content = ""
 		} else if token.Content == ":" {
 			token.Type = TokenJSColonOperator
 		} else if (token.Type == TokenJSWord || token.Type == 0) && strings.Index(JSKeyWords, fmt.Sprintf(",%s,", token.Content)) > 0 {

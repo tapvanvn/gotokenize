@@ -77,22 +77,45 @@ func (meaning *JSPhraseMeaning) newStackToken() *gotokenize.Token {
 
 func (meaning *JSPhraseMeaning) processChild(context *gotokenize.MeaningContext, parentToken *gotokenize.Token) {
 
-	if !gotokenize.IsContainToken(JSLevel2GlobalNested, parentToken.Type) {
+	if !gotokenize.IsContainToken(JSPhraseGlobalNested, parentToken.Type) {
 
 		return
 	}
+	if parentToken.Type == TokenJSBracket || parentToken.Type == TokenJSBracketSquare {
+
+		meaning.processChildBracket(context, parentToken)
+
+	} else {
+		proc := gotokenize.NewMeaningProcessFromStream(append(context.AncestorTokens, parentToken.Type), &parentToken.Children)
+
+		newStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
+
+		for {
+			token := meaning.Next(proc)
+
+			if token == nil {
+
+				break
+			}
+			newStream.AddToken(*token)
+		}
+		parentToken.Children = newStream
+	}
+}
+func (meaning *JSPhraseMeaning) processChildBracket(context *gotokenize.MeaningContext, parentToken *gotokenize.Token) {
 
 	proc := gotokenize.NewMeaningProcessFromStream(append(context.AncestorTokens, parentToken.Type), &parentToken.Children)
 
 	newStream := gotokenize.CreateStream(meaning.GetMeaningLevel())
-
+	iter := parentToken.Children.Iterator()
 	for {
-		token := meaning.Next(proc)
+		token := iter.Read()
 
 		if token == nil {
 
 			break
 		}
+		meaning.processChild(&proc.Context, token)
 		newStream.AddToken(*token)
 	}
 	parentToken.Children = newStream
@@ -268,14 +291,30 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			return tryPhrase
 
 		} else if token.Type == TokenJSPhraseBreak {
-
-			if stackToken.Children.Length() > 0 {
-
-				return meaning.optimizePhrase(stackToken)
-			}
+			lastToken := iter.GetBy(-1)
 			_ = iter.Read()
 			if token.Content == ";" {
+				if stackToken.Children.Length() > 0 {
+
+					return meaning.optimizePhrase(stackToken)
+				}
 				return token
+			} else if stackToken.Children.Length() > 0 {
+				nextToken := iter.Get()
+				for {
+
+					if nextToken == nil || nextToken.Type != TokenJSPhraseBreak || token.Content == ";" {
+						break
+					}
+					_ = iter.Read()
+					nextToken = iter.Get()
+				}
+				if nextToken == nil {
+					break
+				} else if lastToken == nil || nextToken.Type == TokenJSPhraseBreak || (nextToken.Type != TokenJSBinaryOperator && lastToken.Type != TokenJSBinaryOperator) {
+
+					return meaning.optimizePhrase(stackToken)
+				}
 			}
 			//return token
 
@@ -333,7 +372,7 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			meaning.nextReturnStatement(context, iter, returnPhrase)
 			return meaning.optimizePhrase(returnPhrase)
 
-		} else if token.Type == TokenJSColonOperator {
+		} else if token.Type == TokenJSColonOperator || token.Type == TokenJSSoftBreak {
 
 			if stackToken.Children.Length() > 0 {
 				return meaning.optimizePhrase(stackToken)

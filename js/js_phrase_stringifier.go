@@ -13,6 +13,7 @@ func NewDefaultPhraseStringifier() *Stringifier {
 	stringifier.SetProcessor(TokenJSPhraseIfTrail, ProcessPhraseIfTrail)
 	stringifier.SetProcessor(TokenJSPhraseSwitch, ProcessPhraseSwitch)
 	stringifier.SetProcessor(TokenJSBreak, ProcessPhraseBreakStatement)
+	stringifier.SetProcessor(TokenJSContinue, ProcessPhraseContinueStatement)
 	stringifier.SetProcessor(TokenJSPhraseDo, ProcessPhraseDo)
 	stringifier.SetProcessor(TokenJSPhraseFor, ProcessPhraseFor)
 	stringifier.SetProcessor(TokenJSPhraseWhile, ProcessPhraseWhile)
@@ -64,14 +65,19 @@ func ProcessPhraseStreamSpace(stringifier *Stringifier, iter *gotokenize.Iterato
 }
 
 func ProcessPhrasePhrase(stringifier *Stringifier, token *gotokenize.Token) {
+	if token.Children.Length() == 0 {
+		return
+	}
 	stringifier.put("", &NeedAndHasBreakStroke)
-	ProcessPhrasePhraseSpacing(stringifier, token)
-	/*if stringifier.HasStrongBreak {
-		stringifier.put(" ", &BreakAfterStroke)
-	} else {
-		stringifier.put(" ", &DefaultStroke)
+	ProcessPhrasePhraseDefault(stringifier, token)
+	//TODO: improve this
+	/*#if token.Children.Length() > 0 {
+		if last := token.Children.GetTokenAt(token.Children.Length() - 1); last != nil &&
+			(last.Type == TokenJSUnaryOperator || last.Type == TokenJSBracket || last.Type == TokenJSBracketSquare) {
+			stringifier.put(" ", &DefaultStroke)
+			fmt.Println("last", JSTokenName(last.Type))
+		}
 	}*/
-
 }
 func ProcessPhrasePhraseDefault(stringifier *Stringifier, parentToken *gotokenize.Token) {
 	iter := parentToken.Children.Iterator()
@@ -106,7 +112,12 @@ func ProcessPhraseAssign(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("", &NeedAndHasBreakStroke)
 	stringifier.PutToken(token.Children.GetTokenAt(0))
 	stringifier.put(token.Children.GetTokenAt(1).Content, &BreakAfterStroke)
-	stringifier.PutToken(token.Children.GetTokenAt(2))
+
+	right := token.Children.GetTokenAt(2)
+	stringifier.PutToken(right)
+	//if right.Type == TokenJSBlock {
+	//	stringifier.put("", &DefaultStroke)
+	//}
 	stringifier.put("", &DefaultStroke)
 
 }
@@ -190,6 +201,11 @@ func ProcessPhraseSwitch(stringifier *Stringifier, token *gotokenize.Token) {
 }
 func ProcessPhraseBreakStatement(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("break ", &NeedAndHasBreakStroke)
+	ProcessPhrasePhraseDefault(stringifier, token)
+	stringifier.put("", &DefaultStroke)
+}
+func ProcessPhraseContinueStatement(stringifier *Stringifier, token *gotokenize.Token) {
+	stringifier.put("continue ", &NeedAndHasBreakStroke)
 	ProcessPhrasePhraseDefault(stringifier, token)
 	stringifier.put("", &DefaultStroke)
 }

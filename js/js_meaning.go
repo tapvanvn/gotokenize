@@ -24,7 +24,6 @@ func NewDefaultJSPhraseMeaning() *JSPhraseMeaning {
 	return NewJSPhraseMeaning(NewDefaultJSRawMeaning())
 }
 
-/*
 func NewDefaultJSPatternMeaning() gotokenize.IMeaning {
 
 	var last gotokenize.IMeaning = NewDefaultJSOperatorMeaning()
@@ -35,11 +34,11 @@ func NewDefaultJSPatternMeaning() gotokenize.IMeaning {
 	}
 	return last
 }
-*/
+
 func NewDefaultJSMeaning() gotokenize.IMeaning {
 
-	//return NewJSPhraseMeaning(NewDefaultJSPatternMeaning())
-	return NewDefaultJSOperatorMeaning()
+	return NewJSPhraseMeaning(NewDefaultJSPatternMeaning())
+	//return NewDefaultJSOperatorMeaning()
 }
 
 func NewDefaultJSOperatorMeaning() *JSOperatorMeaning {
