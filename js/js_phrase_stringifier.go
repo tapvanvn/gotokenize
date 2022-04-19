@@ -66,7 +66,12 @@ func ProcessPhraseStreamSpace(stringifier *Stringifier, iter *gotokenize.Iterato
 func ProcessPhrasePhrase(stringifier *Stringifier, token *gotokenize.Token) {
 	stringifier.put("", &NeedAndHasBreakStroke)
 	ProcessPhrasePhraseSpacing(stringifier, token)
-	stringifier.put(" ", &DefaultStroke)
+	/*if stringifier.HasStrongBreak {
+		stringifier.put(" ", &BreakAfterStroke)
+	} else {
+		stringifier.put(" ", &DefaultStroke)
+	}*/
+
 }
 func ProcessPhrasePhraseDefault(stringifier *Stringifier, parentToken *gotokenize.Token) {
 	iter := parentToken.Children.Iterator()
@@ -78,6 +83,7 @@ func ProcessPhrasePhraseDefault(stringifier *Stringifier, parentToken *gotokeniz
 		stringifier.PutToken(token)
 	}
 	stringifier.put("", &DefaultStroke)
+
 }
 func ProcessPhrasePhraseSpacing(stringifier *Stringifier, parentToken *gotokenize.Token) {
 	iter := parentToken.Children.Iterator()
@@ -89,7 +95,11 @@ func ProcessPhrasePhraseSpacing(stringifier *Stringifier, parentToken *gotokeniz
 		stringifier.put(" ", &BreakAfterStroke)
 		stringifier.PutToken(token)
 	}
-	stringifier.put("", &DefaultStroke)
+	/*if stringifier.HasStrongBreak {
+		stringifier.put(" ", &BreakAfterStroke)
+	} else {
+		stringifier.put(" ", &DefaultStroke)
+	}*/
 }
 
 func ProcessPhraseAssign(stringifier *Stringifier, token *gotokenize.Token) {

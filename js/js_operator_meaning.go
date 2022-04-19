@@ -1,7 +1,6 @@
 package js
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/tapvanvn/gotokenize/v2"
@@ -41,7 +40,7 @@ func (meaning *JSOperatorMeaning) Next(process *gotokenize.MeaningProcess) *goto
 
 	if len(process.Context.AncestorTokens) == 0 && process.Iter.Offset == 0 {
 
-		fmt.Print("\033[s") //save cursor the position
+		//fmt.Print("\033[s") //save cursor the position
 	}
 	token := meaning.getNextMeaningToken(&process.Context, process.Iter)
 
@@ -58,9 +57,10 @@ func (meaning *JSOperatorMeaning) Next(process *gotokenize.MeaningProcess) *goto
 	}
 
 	if len(process.Context.AncestorTokens) == 0 {
-		fmt.Print("\033[u\033[K") //restore
-		fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
-		fmt.Print("\033[A")
+		//fmt.Print("\033[u\033[K") //restore
+		//fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
+		//fmt.Print("\033[A")
+		//fmt.Printf("\x0cOn %s percent: %f%%/10", meaning.GetName(), process.GetPercent())
 	}
 	if token != nil {
 		return meaning.optimizePhrase(token)

@@ -1,8 +1,6 @@
 package js
 
 import (
-	"fmt"
-
 	"github.com/tapvanvn/gotokenize/v2"
 )
 
@@ -61,7 +59,7 @@ func ProcessRawBracket(stringifier *Stringifier, token *gotokenize.Token) {
 		if childToken == nil {
 			break
 		}
-		fmt.Println("-----", childToken.Content)
+		//fmt.Println("-----", childToken.Content)
 		stringifier.PutToken(childToken)
 	}
 	stringifier.put(")", &DefaultStroke)

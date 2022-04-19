@@ -1,5 +1,9 @@
-function setFrame(frame, time, value) {
-	frame <<= 1;
-	this.frames[frame] = time;
-	this.frames[frame + 1] = value;
-  }
+
+var a = class extends CurveTimeline {
+	constructor(frameCount, bezierCount, slotIndex) {
+	  super(frameCount, bezierCount, [
+		Property.rgb + "|" + slotIndex,
+		Property.alpha + "|" + slotIndex
+	  ]);
+	}
+}

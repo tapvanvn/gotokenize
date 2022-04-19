@@ -21,7 +21,8 @@ type JSPhraseMeaning struct {
 func (meaning *JSPhraseMeaning) Next(process *gotokenize.MeaningProcess) *gotokenize.Token {
 
 	if len(process.Context.AncestorTokens) == 0 && process.Iter.Offset == 0 {
-		fmt.Print("\033[s") //save cursor the position
+
+		//fmt.Print("\033[s") //save cursor the position
 	}
 	stackPhraseToken := gotokenize.NewToken(meaning.GetMeaningLevel(), TokenJSPhrase, "")
 
@@ -45,6 +46,7 @@ func (meaning *JSPhraseMeaning) Next(process *gotokenize.MeaningProcess) *gotoke
 		process.Context.PreviousTokenContent = token.Content
 
 	} else {
+
 		fmt.Println("token nil")
 
 		process.Context.PreviousToken = gotokenize.TokenNoType
@@ -53,9 +55,11 @@ func (meaning *JSPhraseMeaning) Next(process *gotokenize.MeaningProcess) *gotoke
 
 	if len(process.Context.AncestorTokens) == 0 {
 
-		fmt.Print("\033[u\033[K") //restore
-		fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
-		fmt.Print("\033[A")
+		//fmt.Print("\033[u\033[K") //restore
+		//fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
+		//fmt.Print("\033[A")
+		//fmt.Printf("\x0cOn %s percent: %f%%/10", meaning.GetName(), process.GetPercent())
+		//fmt.Printf("\x0cOn %d/10", i)
 	}
 
 	return token
@@ -117,7 +121,9 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 		}
 		//fmt.Println(token.Content)
 		if token.Type == TokenJSBlock {
+
 			if stackToken.Children.Length() == 0 {
+
 				_ = iter.Read()
 				meaning.processChild(context, token)
 				return meaning.optimizePhrase(token)
@@ -268,7 +274,10 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 				return meaning.optimizePhrase(stackToken)
 			}
 			_ = iter.Read()
-			return token
+			if token.Content == ";" {
+				return token
+			}
+			//return token
 
 		} else if token.Content == "=>" { //lambda
 			_ = iter.Read()
@@ -281,6 +290,7 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			rightPart := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
 
 			lambdaPhrase.AddChild(*rightPart)
+
 			return lambdaPhrase
 
 		} else if token.Type == TokenJSAssign {
@@ -330,6 +340,7 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 			}
 			_ = iter.Read()
 			return token
+
 		} else {
 			_ = iter.Read()
 			meaning.processChild(context, token)
@@ -344,6 +355,7 @@ func (meaning *JSPhraseMeaning) getNextMeaningToken(context *gotokenize.MeaningC
 func (meaning *JSPhraseMeaning) nextReturnStatement(context *gotokenize.MeaningContext, iter *gotokenize.Iterator, returnPhrase *gotokenize.Token) {
 
 	if next := iter.Get(); next != nil && next.Type == TokenJSPhraseBreak {
+
 		return
 	}
 	returnBody := meaning.getNextMeaningToken(context, iter, meaning.newStackToken())
