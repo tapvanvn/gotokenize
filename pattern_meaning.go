@@ -1,10 +1,5 @@
 package gotokenize
 
-import (
-	"fmt"
-	"math"
-)
-
 type PatternMeaning struct {
 	*AbstractMeaning
 	Patterns          []Pattern
@@ -35,9 +30,9 @@ func NewPatternMeaning(parent IMeaning, patterns []Pattern, ignoreTokens []int, 
 
 func (meaning *PatternMeaning) Next(process *MeaningProcess) *Token {
 
-	if len(process.Context.AncestorTokens) == 0 && process.Iter.Offset == 0 {
-		fmt.Print("\033[s") //save cursor the position
-	}
+	//if len(process.Context.AncestorTokens) == 0 && process.Iter.Offset == 0 {
+	//	fmt.Print("\033[s") //save cursor the position
+	//}
 	token := meaning.getNextMeaningToken(process.Iter, &process.Context)
 	if token != nil {
 
@@ -61,20 +56,20 @@ func (meaning *PatternMeaning) Next(process *MeaningProcess) *Token {
 		process.Context.PreviousToken = token.Type
 		process.Context.PreviousTokenContent = token.Content
 
-		fmt.Print("\033[u\033[K") //restore
+		//fmt.Print("\033[u\033[K") //restore
 
-		percent := int64(math.Floor(float64(process.Iter.Offset)/float64(process.Stream.Length())) * 100)
-		fmt.Printf("percent: %d\n", percent)
+		//percent := int64(math.Floor(float64(process.Iter.Offset)/float64(process.Stream.Length())) * 100)
+		//fmt.Printf("percent: %d\n", percent)
 
 	} else {
 		process.Context.PreviousToken = TokenNoType
 		process.Context.PreviousTokenContent = ""
 	}
-	if len(process.Context.AncestorTokens) == 0 {
-		fmt.Print("\033[u\033[K") //restore
-		fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
-		fmt.Print("\033[A")
-	}
+	//if len(process.Context.AncestorTokens) == 0 {
+	//	fmt.Print("\033[u\033[K") //restore
+	//	fmt.Printf("%s percent: %f%%\n", meaning.GetName(), process.GetPercent())
+	//	fmt.Print("\033[A")
+	//}
 	return token
 }
 
