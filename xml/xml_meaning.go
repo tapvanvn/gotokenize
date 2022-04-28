@@ -125,7 +125,7 @@ func (meaning *XMLRawMeaning) continueTag(iter *gotokenize.Iterator, currentToke
 func (meaning *XMLRawMeaning) continueReadString(iter *gotokenize.Iterator, currentToken *gotokenize.Token, reach string) {
 
 	var specialCharacter = false
-	var lastSpecialToken *gotokenize.Token = nil
+	//var lastSpecialToken *gotokenize.Token = nil
 
 	for {
 		if iter.EOS() {
@@ -136,7 +136,7 @@ func (meaning *XMLRawMeaning) continueReadString(iter *gotokenize.Iterator, curr
 		if token.Content == "\\" {
 
 			specialCharacter = !specialCharacter
-			lastSpecialToken = token
+			//lastSpecialToken = token
 
 		} else if token.Content == reach {
 
@@ -151,14 +151,13 @@ func (meaning *XMLRawMeaning) continueReadString(iter *gotokenize.Iterator, curr
 			}
 		} else {
 
-			if specialCharacter {
+			//if specialCharacter {
 
-				currentToken.Children.AddToken(*lastSpecialToken)
-			}
+			//	currentToken.Children.AddToken(*lastSpecialToken)
+			//}
 			specialCharacter = false
 			currentToken.Children.AddToken(*token)
 		}
-
 	}
 }
 
