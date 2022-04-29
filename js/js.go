@@ -182,6 +182,7 @@ var JSDebugOptions = &gotokenize.DebugOption{
 		TokenJSBlockComment,
 		//TokenJSOperatorTrail,
 	},
+	ExtendTypeSize: 6,
 }
 
 //JSIgnores tokens that will be ignore

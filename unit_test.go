@@ -260,14 +260,13 @@ func TestJSMeaning(t *testing.T) {
 
 	meaning.Prepare(proc)
 
-	token := meaning.Next(proc)
-
 	for {
+		token := meaning.Next(proc)
 		if token == nil {
 			break
 		}
 		token.Debug(0, js.JSTokenName, js.JSDebugOptions)
-		token = meaning.Next(proc)
+
 	}
 	gotokenize.DebugMeaning(meaning)
 }

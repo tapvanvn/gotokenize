@@ -30,7 +30,7 @@ func ColorName(name string) string {
 
 //ColorType color type of token
 func ColorType(tokenType int) string {
-	return fmt.Sprintf("\033[1;35m%3d\033[0m", tokenType)
+	return fmt.Sprintf("\033[1;35m%d\033[0m", tokenType)
 }
 
 //ColorContent color the content of token
