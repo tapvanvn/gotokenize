@@ -77,24 +77,19 @@ func (token *Token) Debug(level int, fnName func(int) string, options *DebugOpti
 		printContent = string(printContent[0:20]) + "..."
 	}
 
-	for i := 0; i <= level; i++ {
-
-		if i == 0 {
-
-			typeField := fmt.Sprintf("|%s ", ColorType(token.Type))
-
-			typeFieldContent := fmt.Sprintf("|%d ", token.Type)
-			if options != nil && len(typeFieldContent) < options.ExtendTypeSize {
-				for i := len(typeFieldContent); i <= options.ExtendTypeSize; i++ {
-					typeField += " "
-				}
-			}
-			fmt.Print(typeField)
-
-		} else {
-
-			fmt.Print("| ")
+	typeField := fmt.Sprintf("|%s ", ColorType(token.Type))
+	typeFieldContent := fmt.Sprintf("|%d ", token.Type)
+	if options != nil && len(typeFieldContent) < options.ExtendTypeSize {
+		for i := len(typeFieldContent); i < options.ExtendTypeSize; i++ {
+			typeField += " "
 		}
+	}
+
+	fmt.Print(typeField)
+	for i := 1; i <= level; i++ {
+
+		fmt.Print("| ")
+
 	}
 
 	if fnName != nil {
