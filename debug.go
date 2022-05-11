@@ -4,17 +4,41 @@ import (
 	"fmt"
 )
 
-//Black   = Color("\033[1;30m%s\033[0m")
-//Red     = Color("\033[1;31m%s\033[0m")
-//Green   = Color("\033[1;32m%s\033[0m")
-//Yellow  = Color("\033[1;33m%s\033[0m")
-//Purple  = Color("\033[1;34m%s\033[0m")
-//Magenta = Color("\033[1;35m%s\033[0m")
-//Teal    = Color("\033[1;36m%s\033[0m")
-//White   = Color("\033[1;37m%s\033[0m")
+var _fred = "\033[1;31m%s\033[0m"
+var _fgreen = "\033[1;32m%s\033[0m"
+var _fyellow = "\033[1;33m%s\033[0m"
+var _fpurple = "\033[1;34m%s\033[0m"
+var _fmagenta = "\033[1;35m%s\033[0m"
+var _fteal = "\033[1;36m%s\033[0m"
+
+func ColorRed(content string) string {
+
+	return fmt.Sprintf(_fred, content)
+}
+func ColorGreen(content string) string {
+
+	return fmt.Sprintf(_fgreen, content)
+}
+func ColorYellow(content string) string {
+
+	return fmt.Sprintf(_fyellow, content)
+}
+func ColorPurple(content string) string {
+
+	return fmt.Sprintf(_fpurple, content)
+}
+func ColorMagenta(content string) string {
+
+	return fmt.Sprintf(_fmagenta, content)
+}
+func ColorTeal(content string) string {
+
+	return fmt.Sprintf(_fteal, content)
+}
 
 //ColorOffset color the offset
 func ColorOffset(offset int) string {
+
 	return fmt.Sprintf("\033[1;32m%3d\033[0m", offset)
 }
 

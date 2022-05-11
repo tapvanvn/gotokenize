@@ -123,7 +123,7 @@ func TestXMLRawMeaning(t *testing.T) {
 	content := `<xml abc="def">
 		<next/>
 		<name>tapvanvn</name>
-		<debug>{{ahshsdfkjlsdf}}</debug>
+		<debug>{{ahshsdfkjlsdf "abc"}} </debug>
 		<!--
 			comment here
 		-->
