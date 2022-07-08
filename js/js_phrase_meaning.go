@@ -522,13 +522,17 @@ func (meaning *JSPhraseMeaning) nextClassBody(context *gotokenize.MeaningContext
 		first := iter.Read()
 		if first != nil &&
 			(first.Type == TokenJSWord ||
-				(first.Type == TokenJSKeyWord && (first.Content == "constructor" || first.Content == "static"))) {
+				(first.Type == TokenJSKeyWord &&
+					(first.Content == "constructor" ||
+						first.Content == "static" ||
+						first.Content == "set" ||
+						first.Content == "get"))) {
 
 			tmpToken := meaning.newPhraseToken(TokenJSPhraseClassFunction)
 			tmpToken.Children.AddToken(*first)
 
 			meaning.continuePassPhraseBreak(context, iter)
-			if first.Content == "static" {
+			if first.Content == "static" || first.Content == "set" || first.Content == "get" {
 				if second := iter.Get(); second != nil && second.Type == TokenJSWord {
 					tmpToken.Children.AddToken(*second)
 					iter.Read()

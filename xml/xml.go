@@ -33,27 +33,29 @@ func XMLNaming(tokenType int) string {
 	case 0:
 		return "word"
 	case TokenXMLSpace:
-		return "space"
+		return "xml_space"
 	case TokenXMLString:
-		return "string"
+		return "xml_string"
 	case TokenXMLOperator:
-		return "operator"
+		return "xml_operator"
 	case TokenXMLComment:
-		return "comment"
+		return "xml_comment"
 	case TokenXMLAttribute:
-		return "attribute"
+		return "xml_attribute"
 	case TokenXMLTagBegin:
-		return "tag begin"
+		return "xml_tag begin"
 	case TokenXMLTagEnd:
-		return "tag end"
+		return "xml_tag end"
 	case TokenXMLTagUnknown:
-		return "single tag"
+		return "xml_single tag"
+	case TokenXMLEndElement:
+		return "xml_end element"
 	case TokenXMLElement:
-		return "element"
+		return "xml_element"
 	case TokenXMLElementAttributes:
-		return "attribute set"
+		return "xml_attribute set"
 	case TokenXMLElementBody:
-		return "body"
+		return "xml_body"
 	}
 	return "unknown"
 }

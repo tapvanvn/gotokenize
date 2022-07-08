@@ -166,7 +166,7 @@ var JSKeyWords string = `
 ,export,extends,false,final,finally,float,for,function,
 ,goto,if,implements,import,
 ,in,of,instanceof,int,interface,
-,let,long,native,new,
+,let,long,native,new,set,get,
 ,null,package,private,protected,
 ,public,return,short,static,
 ,super,switch,synchronized,this,

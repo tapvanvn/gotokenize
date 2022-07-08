@@ -37,42 +37,40 @@ func (meaning *XMLRawMeaning) Next(process *gotokenize.MeaningProcess) *gotokeni
 
 func (meaning *XMLRawMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {
 
-	if iter.EOS() {
-		return nil
-	}
 	token := iter.Read()
-	if token.Content == "<" {
-		nextToken := iter.Get()
-		third := iter.GetBy(1)
-		check := nextToken != nil && nextToken.Content == "!"
-		check = check && third != nil
-		check = check && third.Content == "--"
-		if check {
-			fmt.Println("found comment")
+	if token != nil {
+		if token.Content == "<" {
+			nextToken := iter.Get()
+			third := iter.GetBy(1)
+			check := nextToken != nil && nextToken.Content == "!"
+			check = check && third != nil
+			check = check && third.Content == "--"
+			if check {
+				fmt.Println("found comment")
+				tmpToken := &gotokenize.Token{
+					Type: TokenXMLComment,
+				}
+				meaning.continueComment(iter, tmpToken)
+				return tmpToken
+
+			} else {
+				tagToken := &gotokenize.Token{
+					Type: TokenXMLTagUnknown,
+				}
+				meaning.continueTag(iter, tagToken)
+				return tagToken
+			}
+		} else if token.Content == "\"" || token.Content == "'" {
+
 			tmpToken := &gotokenize.Token{
-				Type: TokenXMLComment,
+				Content: token.Content,
+				Type:    TokenXMLString,
 			}
-			meaning.continueComment(iter, tmpToken)
+			meaning.continueReadString(iter, tmpToken, token.Content)
 			return tmpToken
-
-		} else {
-			tagToken := &gotokenize.Token{
-				Type: TokenXMLTagUnknown,
-			}
-			meaning.continueTag(iter, tagToken)
-			return tagToken
 		}
-	} else if token.Content == "\"" || token.Content == "'" {
-
-		tmpToken := &gotokenize.Token{
-			Content: token.Content,
-			Type:    TokenXMLString,
-		}
-		meaning.continueReadString(iter, tmpToken, token.Content)
-		return tmpToken
 	}
 	return token
-
 }
 
 func (meaning *XMLRawMeaning) continueTag(iter *gotokenize.Iterator, currentToken *gotokenize.Token) {

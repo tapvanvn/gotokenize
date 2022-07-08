@@ -19,33 +19,31 @@ func (meaning *XMLHighMeaning) Next(process *gotokenize.MeaningProcess) *gotoken
 
 func (meaning *XMLHighMeaning) getNextMeaningToken(iter *gotokenize.Iterator) *gotokenize.Token {
 
-	if iter.EOS() {
-		return nil
-	}
-
 	token := iter.Read()
-	if token.Type == TokenXMLTagBegin {
-		tmpToken := &gotokenize.Token{
-			Type:    TokenXMLElement,
-			Content: token.Content,
-		}
-		tagName := token.Content
-		token.Content = ""
-		token.Type = TokenXMLElementAttributes
+	if token != nil {
+		if token.Type == TokenXMLTagBegin {
+			tmpToken := &gotokenize.Token{
+				Type:    TokenXMLElement,
+				Content: token.Content,
+			}
+			tagName := token.Content
+			token.Content = ""
+			token.Type = TokenXMLElementAttributes
 
-		tmpToken.Children.AddToken(*token)
-		meaning.continueTag(tagName, iter, tmpToken)
-		return tmpToken
-	} else if token.Type == TokenXMLTagUnknown {
+			tmpToken.Children.AddToken(*token)
+			meaning.continueTag(tagName, iter, tmpToken)
+			return tmpToken
+		} else if token.Type == TokenXMLTagUnknown {
 
-		tmpToken := &gotokenize.Token{
-			Type:    TokenXMLEndElement,
-			Content: token.Content,
+			tmpToken := &gotokenize.Token{
+				Type:    TokenXMLEndElement,
+				Content: token.Content,
+			}
+			token.Content = ""
+			token.Type = TokenXMLElementAttributes
+			tmpToken.Children.AddToken(*token)
+			return tmpToken
 		}
-		token.Content = ""
-		token.Type = TokenXMLElementAttributes
-		tmpToken.Children.AddToken(*token)
-		return tmpToken
 	}
 	return token
 
